@@ -8,8 +8,8 @@ $email=$_POST['emailid'];
 $mobileno=$_POST['mobileno'];
 $dscrption=$_POST['description'];
 $query=mysqli_query($con,"insert into tblcontactus(fullname,email,contactno,message) value('$name','$email','$mobileno','$dscrption')");
-echo "<script>alert('تم إرسال معلوماتك بنجاح');</script>";
-echo "<script>window.location.href ='index.php'</script>";
+echo "<script>alert('تم إرسال معلوماتك بنجاح');</script> - index.php:11";
+echo "<script>window.location.href =''</script> - index.php:12";
 
 } ?>
 <!doctype html>
@@ -264,7 +264,7 @@ $ret=mysqli_query($con,"select * from tblpage where PageType='aboutus' ");
 while ($row=mysqli_fetch_array($ret)) {
 ?>
 
-    <p><?php  echo $row['PageDescription'];?>.</p><?php } ?>
+    <p><?php  echo $row['PageDescription - index.php:267'];?>.</p><?php } ?>
             </div>
         </div>
     </section>    
@@ -390,10 +390,10 @@ while ($row=mysqli_fetch_array($ret)) {
 ?>
 
 
-                        <?php  echo $row['PageDescription'];?> <br>
-                        Phone: <?php  echo $row['MobileNumber'];?> <br>
-                        Email: <a href="mailto:<?php  echo $row['Email'];?>" class=""><?php  echo $row['Email'];?></a><br>
-                        Timing: <?php  echo $row['OpenningTime'];?>
+                        <?php  echo $row['PageDescription - index.php:393'];?> <br>
+                        Phone: <?php  echo $row['MobileNumber - index.php:394'];?> <br>
+                        Email: <a href="mailto:<?php  echo $row['Email'];?> - index.php:395" class=""><?php  echo $row['Email'];?></a><br>
+                        Timing: <?php  echo $row['OpenningTime - index.php:396'];?>
                     </address>
 
         <?php } ?>

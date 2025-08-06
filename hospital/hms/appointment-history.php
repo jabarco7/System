@@ -33,7 +33,7 @@ if(isset($_GET['cancel']))
 	</head>
 	<body>
 		<div id="app">		
-<?php include('include/sidebar.php');?>
+ <?php include('include/sidebar.php');?> 
 			<div class="app-content">
 				
 
@@ -65,8 +65,8 @@ if(isset($_GET['cancel']))
 									<div class="row">
 								<div class="col-md-12">
 									
-									<p style="color:red;"><?php echo htmlentities($_SESSION['msg']);?>
-								<?php echo htmlentities($_SESSION['msg']="");?></p>	
+									<p style="color:red; - appointment-history.php:68"><?php echo htmlentities($_SESSION['msg']);?>
+								<?php echo htmlentities($_SESSION['msg - appointment-history.php:69']="");?></p>	
 									<table class="table table-hover" id="sample-table-1">
 										<thead>
 											<tr>
@@ -90,27 +90,27 @@ while($row=mysqli_fetch_array($sql))
 ?>
 
 											<tr>
-												<td class="center"><?php echo $cnt;?>.</td>
-												<td class="hidden-xs"><?php echo $row['docname'];?></td>
-												<td><?php echo $row['doctorSpecialization'];?></td>
-												<td><?php echo $row['consultancyFees'];?></td>
-												<td><?php echo $row['appointmentDate'];?> / <?php echo
+												<td class="center - appointment-history.php:93"><?php echo $cnt;?>.</td>
+												<td class="hiddenxs - appointment-history.php:94"><?php echo $row['docname'];?></td>
+												<td><?php echo $row['doctorSpecialization - appointment-history.php:95'];?></td>
+												<td><?php echo $row['consultancyFees - appointment-history.php:96'];?></td>
+												<td><?php echo $row['appointmentDate - appointment-history.php:97'];?> / <?php echo
 												 $row['appointmentTime'];?>
 												</td>
-												<td><?php echo $row['postingDate'];?></td>
+												<td><?php echo $row['postingDate - appointment-history.php:100'];?></td>
 												<td>
 <?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
 {
-	echo "نشط";
+	echo "نشط - appointment-history.php:104";
 }
 if(($row['userStatus']==0) && ($row['doctorStatus']==1))  
 {
-	echo "إالغاء بواسطتك";
+	echo "إالغاء بواسطتك - appointment-history.php:108";
 }
 
 if(($row['userStatus']==1) && ($row['doctorStatus']==0))  
 {
-	echo "إالغاء من قبل الطبيب";
+	echo "إالغاء من قبل الطبيب - appointment-history.php:113";
 }
 
 
@@ -122,10 +122,10 @@ if(($row['userStatus']==1) && ($row['doctorStatus']==0))
 { ?>
 
 													
-	<a href="appointment-history.php?id=<?php echo $row['id']?>&cancel=update" onClick="return confirm('Are you sure you want to cancel this appointment ?')"class="btn btn-primary btn-xs" title="Cancel Appointment" tooltip-placement="top" tooltip="Remove">الغاء</a>
+	<a href="?id=<?php echo $row['id']?>&cancel=update - appointment-history.php:125" onClick="return confirm('Are you sure you want to cancel this appointment ?')"class="btn btn-primary btn-xs" title="Cancel Appointment" tooltip-placement="top" tooltip="Remove">الغاء</a>
 	<?php } else {
 
-		echo "تم الإلغاء";
+		echo "تم الإلغاء - appointment-history.php:128";
 		} ?>
 												</div>
 												<div class="visible-xs visible-sm hidden-md hidden-lg">

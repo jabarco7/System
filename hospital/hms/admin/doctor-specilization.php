@@ -79,8 +79,8 @@ $_SESSION['msg']="تم حذف البيانات !!";
 													<h5 class="panel-title">اضافة تخصص جديد</h5>
 												</div>
 												<div class="panel-body">
-								<p style="color:red;"><?php echo htmlentities($_SESSION['msg']);?>
-								<?php echo htmlentities($_SESSION['msg']="");?></p>	
+								<p style="color:red; - doctor-specilization.php:82"><?php echo htmlentities($_SESSION['msg']);?>
+								<?php echo htmlentities($_SESSION['msg - doctor-specilization.php:83']="");?></p>	
 													<form role="form" name="dcotorspcl" method="post" >
 														<div class="form-group">
 															<label for="exampleInputEmail1">
@@ -134,17 +134,17 @@ while($row=mysqli_fetch_array($sql))
 ?>
 
 											<tr>
-												<td class="center"><?php echo $cnt;?>.</td>
-												<td class="hidden-xs"><?php echo $row['specilization'];?></td>
-												<td><?php echo $row['creationDate'];?></td>
-												<td><?php echo $row['updationDate'];?>
+												<td class="center - doctor-specilization.php:137"><?php echo $cnt;?>.</td>
+												<td class="hiddenxs - doctor-specilization.php:138"><?php echo $row['specilization'];?></td>
+												<td><?php echo $row['creationDate - doctor-specilization.php:139'];?></td>
+												<td><?php echo $row['updationDate - doctor-specilization.php:140'];?>
 												</td>
 												
 												<td >
 												<div class="visible-md visible-lg hidden-sm hidden-xs">
-							<a href="edit-doctor-specialization.php?id=<?php echo $row['id'];?>" class="btn btn-transparent btn-xs" tooltip-placement="top" tooltip="Edit"><i class="fa fa-pencil"></i></a>
+							<a href="editdoctorspecialization.php?id=<?php echo $row['id'];?> - doctor-specilization.php:145" class="btn btn-transparent btn-xs" tooltip-placement="top" tooltip="Edit"><i class="fa fa-pencil"></i></a>
 													
-	<a href="doctor-specilization.php?id=<?php echo $row['id']?>&del=delete" onClick="return confirm('هل أنت متأكد أنك تريد الحذف؟?')"class="btn btn-transparent btn-xs tooltips" tooltip-placement="top" tooltip="Remove"><i class="fa fa-times fa fa-white"></i></a>
+	<a href="?id=<?php echo $row['id']?>&del=delete - doctor-specilization.php:147" onClick="return confirm('هل أنت متأكد أنك تريد الحذف؟?')"class="btn btn-transparent btn-xs tooltips" tooltip-placement="top" tooltip="Remove"><i class="fa fa-times fa fa-white"></i></a>
 												</div>
 												<div class="visible-xs visible-sm hidden-md hidden-lg">
 													<div class="btn-group" dropdown is-open="status.isopen">

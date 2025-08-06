@@ -2,22 +2,22 @@
 session_start();
 error_reporting(0);
 include('include/config.php');
-if(strlen($_SESSION['id']==0)) {
- header('location:logout.php');
-  } else{
+if (strlen($_SESSION['id'] == 0)) {
+	header('location:logout.php');
+} else {
 
-if(isset($_GET['del']))
-		  {
-		  	$uid=$_GET['id'];
-		          mysqli_query($con,"delete from users where id ='$uid'");
-                  $_SESSION['msg']="تم حذف البيانات !!";
-		  }
+	if (isset($_GET['del'])) {
+		$uid = $_GET['id'];
+		mysqli_query($con, "delete from users where id ='$uid'");
+		$_SESSION['msg'] = "تم حذف البيانات !!";
+	}
 ?>
-<!DOCTYPE html>
-<html lang="en">
+	<!DOCTYPE html>
+	<html lang="ar" dir="rtl">
+
 	<head>
 		<title>المسؤول | إدارة المستخدمين</title>
-		
+
 		<link href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
 		<link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
@@ -33,22 +33,23 @@ if(isset($_GET['del']))
 		<link rel="stylesheet" href="assets/css/plugins.css">
 		<link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
 	</head>
+
 	<body>
-		<div id="app">		
-<?php include('include/sidebar.php');?>
+		<div id="app">
+			<?php include('include/sidebar.php'); ?>
 			<div class="app-content">
-				
-						<?php include('include/header.php');?>
-						
+
+				<?php include('include/header.php'); ?>
+
 				<!-- end: TOP NAVBAR -->
-				<div class="main-content" >
+				<div class="main-content">
 					<div class="wrap-content container" id="container">
 						<!-- start: PAGE TITLE -->
 						<section id="page-title">
 							<div class="row">
 								<div class="col-sm-8">
 									<h1 class="mainTitle">المسؤول | إدارة المستخدمين</h1>
-																	</div>
+								</div>
 								<ol class="breadcrumb">
 									<li>
 										<span>المسؤول</span>
@@ -62,13 +63,13 @@ if(isset($_GET['del']))
 						<!-- end: PAGE TITLE -->
 						<!-- start: BASIC EXAMPLE -->
 						<div class="container-fluid container-fullw bg-white">
-						
 
-									<div class="row">
+
+							<div class="row">
 								<div class="col-md-12">
 									<h5 class="over-title margin-bottom-15">إدارة <span class="text-bold">المستخدمين</span></h5>
-									<p style="color:red;"><?php echo htmlentities($_SESSION['msg']);?>
-								<?php echo htmlentities($_SESSION['msg']="");?></p>	
+									<p style="color:red; - manage-users.php:71"><?php echo htmlentities($_SESSION['msg']); ?>
+										<?php echo htmlentities($_SESSION['msg - manage-users.php:72'] = ""); ?></p>
 									<table class="table table-hover" id="sample-table-1">
 										<thead>
 											<tr>
@@ -81,86 +82,86 @@ if(isset($_GET['del']))
 												<th>تاريخ الإنشاء </th>
 												<th>تاريخ التحديث </th>
 												<th>الإجراء</th>
-												
+
 											</tr>
 										</thead>
 										<tbody>
-<?php
-$sql=mysqli_query($con,"select * from users");
-$cnt=1;
-while($row=mysqli_fetch_array($sql))
-{
-?>
+											<?php
+											$sql = mysqli_query($con, "select * from users");
+											$cnt = 1;
+											while ($row = mysqli_fetch_array($sql)) {
+											?>
 
-											<tr>
-												<td class="center"><?php echo $cnt;?>.</td>
-												<td class="hidden-xs"><?php echo $row['fullName'];?></td>
-												<td><?php echo $row['address'];?></td>
-												<td><?php echo $row['city'];?>
-												</td>
-												<td><?php echo $row['gender'];?></td>
-												<td><?php echo $row['email'];?></td>
-												<td><?php echo $row['regDate'];?></td>
-												<td><?php echo $row['updationDate'];?>
-												</td>
-												<td >
-												<div class="visible-md visible-lg hidden-sm hidden-xs">
-							
-													
-	<a href="manage-users.php?id=<?php echo $row['id']?>&del=delete" onClick="return confirm('هل أنت متأكد أنك تريد الحذف؟')"class="btn btn-transparent btn-xs tooltips" tooltip-placement="top" tooltip="Remove"><i class="fa fa-times fa fa-white"></i></a>
-												</div>
-												<div class="visible-xs visible-sm hidden-md hidden-lg">
-													<div class="btn-group" dropdown is-open="status.isopen">
-														<button type="button" class="btn btn-primary btn-o btn-sm dropdown-toggle" dropdown-toggle>
-															<i class="fa fa-cog"></i>&nbsp;<span class="caret"></span>
-														</button>
-														<ul class="dropdown-menu pull-right dropdown-light" role="menu">
-															<li>
-																<a href="#">
-																	تعديل
-																</a>
-															</li>
-															<li>
-																<a href="#">
-																	مشاركة
-																</a>
-															</li>
-															<li>
-																<a href="#">
-																	حذف
-																</a>
-															</li>
-														</ul>
-													</div>
-												</div></td>
-											</tr>
-											
-											<?php 
-$cnt=$cnt+1;
-											 }?>
-											
-											
+												<tr>
+													<td class="center - manage-users.php:96"><?php echo $cnt; ?>.</td>
+													<td class="hiddenxs - manage-users.php:97"><?php echo $row['fullName']; ?></td>
+													<td><?php echo $row['address - manage-users.php:98']; ?></td>
+													<td><?php echo $row['city - manage-users.php:99']; ?>
+													</td>
+													<td><?php echo $row['gender - manage-users.php:101']; ?></td>
+													<td><?php echo $row['email - manage-users.php:102']; ?></td>
+													<td><?php echo $row['regDate - manage-users.php:103']; ?></td>
+													<td><?php echo $row['updationDate - manage-users.php:104']; ?>
+													</td>
+													<td>
+														<div class="visible-md visible-lg hidden-sm hidden-xs">
+
+
+															<a href="?id=<?php echo $row['id'] ?>&del=delete - manage-users.php:110" onClick="return confirm('هل أنت متأكد أنك تريد الحذف؟')" class="btn btn-transparent btn-xs tooltips" tooltip-placement="top" tooltip="Remove"><i class="fa fa-times fa fa-white"></i></a>
+														</div>
+														<div class="visible-xs visible-sm hidden-md hidden-lg">
+															<div class="btn-group" dropdown is-open="status.isopen">
+																<button type="button" class="btn btn-primary btn-o btn-sm dropdown-toggle" dropdown-toggle>
+																	<i class="fa fa-cog"></i>&nbsp;<span class="caret"></span>
+																</button>
+																<ul class="dropdown-menu pull-right dropdown-light" role="menu">
+																	<li>
+																		<a href="#">
+																			تعديل
+																		</a>
+																	</li>
+																	<li>
+																		<a href="#">
+																			مشاركة
+																		</a>
+																	</li>
+																	<li>
+																		<a href="#">
+																			حذف
+																		</a>
+																	</li>
+																</ul>
+															</div>
+														</div>
+													</td>
+												</tr>
+
+											<?php
+												$cnt = $cnt + 1;
+											} ?>
+
+
 										</tbody>
 									</table>
 								</div>
 							</div>
-								</div>
-							</div>
 						</div>
-						<!-- end: BASIC EXAMPLE -->
-						<!-- end: SELECT BOXES -->
-						
 					</div>
 				</div>
+				<!-- end: BASIC EXAMPLE -->
+				<!-- end: SELECT BOXES -->
+
 			</div>
-			<!-- start: FOOTER -->
-	<?php include('include/footer.php');?>
-			<!-- end: FOOTER -->
-		
-			<!-- start: SETTINGS -->
-	<?php include('include/setting.php');?>
-			
-			<!-- end: SETTINGS -->
+		</div>
+		</div>
+		<!-- start: FOOTER -->
+		<?php include('include/footer.php'); ?>
+		<!-- end: FOOTER -->
+
+		<!-- start: SETTINGS -->
+		<?php include('include/setting.php'); ?>
+
+		<!-- end: SETTINGS -->
 		</div>
 		<!-- start: MAIN JAVASCRIPTS -->
 		<script src="vendor/jquery/jquery.min.js"></script>
@@ -193,5 +194,6 @@ $cnt=$cnt+1;
 		<!-- end: JavaScript Event Handlers for this page -->
 		<!-- end: CLIP-TWO JAVASCRIPTS -->
 	</body>
-</html>
+
+	</html>
 <?php } ?>
