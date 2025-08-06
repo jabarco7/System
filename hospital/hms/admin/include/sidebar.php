@@ -1,490 +1,301 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام المستشفى - شريط التنقل</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #4361ee;
-            --primary-light: #4895ef;
-            --secondary: #3f37c9;
-            --success: #4cc9f0;
-            --danger: #f72585;
-            --warning: #f8961e;
-            --light: #f8f9fa;
-            --dark: #212529;
-            --sidebar-bg: #ffffff;
-            --sidebar-hover: #f0f7ff;
-            --text-dark: #2b2d42;
-            --text-light: #8d99ae;
-            --border-color: #edf2f4;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>المسؤول | لوحة التحكم</title>
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Tajawal', sans-serif;
-        }
+  <!-- Bootstrap RTL -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <!-- خط Tajawal -->
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-        body {
-            min-height: 100vh;
-            background-color: #f8f9fa;
-            color: var(--text-dark);
-        }
+  <style>
+    body {
+      font-family: 'Tajawal', sans-serif;
+      background: linear-gradient(135deg,#f5f7fa,#e4edf9);
+      min-height: 100vh;
+      padding-top: 65px; /* لحساب ارتفاع الشريط العلوي */
+    }
 
-        /* تصميم الشريط الجانبي */
-        .sidebar-container {
- width: 280px;
-			background-color: var(--sidebar-bg) #212529;
-			color: var(--text-dark);
-			display: flex;
-			flex-direction: column;
-			position: fixed;
-			top: 0;
-			right: 0;
-			height: 100vh;
-			box-shadow: 3px 0 15px rgba(0, 0, 0, 0.2);
-			transition: all 0.3s ease;
-		}
-        .sidebar-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--border-color);
-            text-align: center;
-        }
+    /* الشريط الجانبي */
+    #sidebar {
+      position: fixed;
+      right: 0 !important;
+      left: auto !important;
+      width: 280px;
+      height: calc(100vh - 52px);
+      background-color: #1a2530 !important;
+      color: white;
+      overflow-y: auto;
+      z-index: 1020;
+      padding: 1rem;
+      transition: all 0.3s ease;
+    }
 
-        .sidebar-brand {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary);
-            text-decoration: none;
-            font-size: 1.3rem;
-            font-weight: 700;
-        }
+    
 
-        .sidebar-brand i {
-            margin-left: 10px;
-            font-size: 1.5rem;
-        }
+    /* العناصر العامة */
+    .user-avatar {
+      width: 70px;
+      height: 70px;
+      border: 3px solid var(--bs-primary);
+      background: #2c3e50;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      color: var(--bs-primary);
+      margin: 0 auto;
+    }
 
-        .user-profile {
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid var(--border-color);
-        }
+    .nav-link {
+      color: white !important;
+      padding: 10px 15px !important;
+      border-radius: 5px;
+      margin-bottom: 5px;
+    }
+    
 
-        .user-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid var(--primary);
-            margin: 0 auto 10px;
-            display: block;
-            background-color: var(--primary-light);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8rem;
-        }
+    .nav-link.active {
+      background-color: #007bff !important;
+    }
 
-        .user-name {
-            font-weight: 700;
-            margin-bottom: 5px;
-            color: var(--text-dark);
-        }
+    .nav-link:hover {
+      background-color: rgba(255,255,255,0.1);
+    }
 
-        .user-role {
-            background: rgba(67, 97, 238, 0.1);
-            color: var(--primary);
-            padding: 3px 15px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            display: inline-block;
-        }
+    .stat-card {
+      position: relative;
+      overflow: hidden;
+      padding: 25px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+      transition: transform .3s;
+      background: #fff;
+      margin-bottom: 20px;
+    }
 
-        .sidebar-menu {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px 10px;
-        }
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
 
-        .menu-section-title {
-            color: var(--text-light);
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 10px 15px;
-            margin: 15px 0 10px;
-            font-weight: 600;
-        }
+    .stat-card i {
+      font-size: 2.8rem;
+      margin-bottom: 15px;
+      color: #007bff;
+    }
 
-        .menu-item {
-            margin-bottom: 5px;
-            position: relative;
-        }
+    .section-title {
+      font-weight: 700;
+      color: #343a40;
+      position: relative;
+      padding-bottom: 15px;
+      margin-bottom: 25px;
+    }
 
-        .menu-link {
-            display: flex;
-            align-items: center;
-            padding: 12px 15px;
-            color: var(--text-dark);
-            text-decoration: none;
-            border-radius: 8px;
-            transition: all 0.3s;
-            font-weight: 500;
-        }
+    .section-title::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg,#007bff,#4aa8e0);
+      border-radius: 3px;
+    }
 
-        .menu-link:hover, 
-        .menu-item.active .menu-link {
-            background: var(--sidebar-hover);
-            color: var(--primary);
-        }
+    /* القوائم المنسدلة */
+    .collapse.show {
+      display: block !important;
+    }
 
-        .menu-icon {
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: 10px;
-            background: rgba(67, 97, 238, 0.1);
-            border-radius: 8px;
-            color: var(--primary);
-            transition: all 0.3s;
-        }
+    .nav-item .collapse {
+      margin-top: 5px;
+      
+    }
 
-        .menu-item.active .menu-icon,
-        .menu-link:hover .menu-icon {
-            background: var(--primary);
-            color: white;
-        }
+    .nav-item .nav-link[data-bs-toggle="collapse"]::after {
+      content: "\f078";
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+      margin-right: auto;
+      margin-left: 10px;
+      transition: transform 0.3s;
+    }
 
-        .menu-text {
-            flex: 1;
-        }
+    .nav-item .nav-link[data-bs-toggle="collapse"][aria-expanded="true"]::after {
+      transform: rotate(180deg);
+      
+    }
 
-        .menu-badge {
-            background: var(--primary);
-            color: white;
-            font-size: 0.75rem;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-weight: 600;
-        }
+    /* زر القائمة على الأجهزة الصغيرة */
+    #sidebarToggle {
+      display: none;
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
 
-        .menu-arrow {
-            transition: transform 0.3s;
-            color: var(--text-light);
-            font-size: 0.8rem;
-        }
+    /* التجاوب مع أحجام الشاشات */
+    @media (max-width: 992px) {
+      #sidebar {
+        transform: translateX(100%);
+        
+      }
 
-        .menu-item.active .menu-arrow {
-            transform: rotate(180deg);
-            color: var(--primary);
-        }
+      #sidebar.active {
+        transform: translateX(0);
+      }
 
-        .submenu {
-            list-style: none;
-            padding-right: 30px;
-            margin-top: 5px;
-            display: none;
-            animation: fadeIn 0.3s ease-out;
-        }
+      .main-content {
+        margin-right: 0;
+      }
 
-        .menu-item.active .submenu {
-            display: block;
-        }
+      #sidebarToggle {
+        display: block;
+      }
+    }
 
-        .submenu-item {
-            margin-bottom: 3px;
-        }
+    @media (max-width: 768px) {
+      .stat-card {
+        padding: 15px;
+      }
 
-        .submenu-link {
-            display: block;
-            padding: 8px 15px;
-            color: var(--text-light);
-            text-decoration: none;
-            border-radius: 6px;
-            transition: all 0.3s;
-            font-size: 0.9rem;
-            position: relative;
-            font-weight: 500;
-        }
+      .stat-card i {
+        font-size: 2rem;
+      }
+    }
 
-        .submenu-link:hover {
-            color: var(--primary);
-            background: rgba(67, 97, 238, 0.05);
-        }
+    @media (max-width: 576px) {
+      body {
+        padding-top: 60px;
+      }
 
-        .submenu-link::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            right: 5px;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--primary);
-            transform: translateY(-50%);
-            opacity: 0.5;
-        }
+      #sidebar {
+     height: calc(100vh - 60px);
+      }
 
-        .submenu-link:hover::before {
-            opacity: 1;
-        }
+      .top-navbar {
+        height: 60px;
+      }
 
-        .sidebar-footer {
-            padding: 15px;
-            border-top: 1px solid var(--border-color);
-            text-align: center;
-        }
+      .user-avatar {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+      }
+    }
+        .collapse.show {
+    display: block !important;
+    visibility: visible !important;
+}
+.collapse.show {
+    display: block !important;
+    visibility: visible !important;
+    height: auto !important;  /* أحيانًا height يكون سبب الإخفاء */
+    overflow: visible !important;
+}
+.main-content {
+  padding-right: 280px;
+}
 
-        .sidebar-footer p {
-            color: var(--text-light);
-            font-size: 0.85rem;
-        }
 
-        /* زر التبديل للشريط الجانبي */
-        /* المحتوى الرئيسي */
-        .main-content {
-            margin-right: 280px;
-            padding: 20px;
-            transition: margin-right 0.3s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* التصميم المتجاوب */
-        @media (max-width: 992px) {
-            .sidebar-container {
-                transform: translateX(100%);
-            }
-            
-            .sidebar-container.active {
-                transform: translateX(0);
-            }
-            
-            .main-content {
-                margin-right: 0;
-            }
-            
-        }
-
-        @media (max-width: 768px) {
-            .sidebar-container {
-                width: 260px;
-            }
-            
-            .menu-link {
-                padding: 10px 12px;
-            }
-        }
-    </style>
+  </style>
 </head>
 <body>
-    <!-- زر تبديل الشريط الجانبي -->
-
-    <!-- الشريط الجانبي -->
-    <div class="sidebar-container">
-        <!-- رأس الشريط الجانبي -->
-        <div class="sidebar-header">
-            <a href="#" class="sidebar-brand">
-                <i class="fas fa-hospital"></i>
-                <span>نظام المستشفى</span>
-            </a>
-        </div>
-
-        <!-- ملف تعريف المستخدم -->
-        <div class="user-profile">
-            <div class="user-avatar">
-                <i class="fas fa-user-md"></i>
-            </div>
-            <h3 class="user-name">د. أحمد محمد</h3>
-            <span class="user-role">مدير النظام</span>
-        </div>
-
-        <!-- قائمة التنقل -->
-        <div class="sidebar-menu">
-            <h5 class="menu-section-title">القائمة الرئيسية</h5>
-            
-            <ul class="menu-list">
-                <li class="menu-item active">
-                    <a href="dashboard.php" class="menu-link">
-                        <div class="menu-icon">
-                            <i class="fas fa-home"></i>
-                        </div>
-                        <div class="menu-text">لوحة التحكم</div>
-                        <span class="menu-badge">5</span>
-                    </a>
-                </li>
-                
-                <li class="menu-item">
-                    <a href="javascript:void(0)" class="menu-link">
-                        <div class="menu-icon">
-                            <i class="fas fa-user-md"></i>
-                        </div>
-                        <div class="menu-text">إدارة الأطباء</div>
-                        <i class="fas fa-chevron-down menu-arrow"></i>
-                    </a>
-                    <ul class="submenu">
-                        <li class="submenu-item">
-                            <a href="doctor-specilization.php" class="submenu-link">التخصصات الطبية</a>
-                        </li>
-                        <li class="submenu-item">
-                            <a href="add-doctor.php" class="submenu-link">إضافة طبيب جديد</a>
-                        </li>
-                        <li class="submenu-item">
-                            <a href="Manage-doctors.php" class="submenu-link">قائمة الأطباء</a>
-                        </li>
-                    </ul>
-                </li>
-                
-                <li class="menu-item">
-                    <a href="manage-users.php" class="menu-link">
-                        <div class="menu-icon">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <div class="menu-text">إدارة المستخدمين</div>
-                        <span class="menu-badge">12</span>
-                    </a>
-                </li>
-                
-                <li class="menu-item">
-                    <a href="manage-patient.php" class="menu-link">
-                        <div class="menu-icon">
-                            <i class="fas fa-user-injured"></i>
-                        </div>
-                        <div class="menu-text">إدارة المرضى</div>
-                    </a>
-                </li>
-                
-                <li class="menu-item">
-                    <a href="appointment-history.php" class="menu-link">
-                        <div class="menu-icon">
-                            <i class="fas fa-calendar-check"></i>
-                        </div>
-                        <div class="menu-text">المواعيد</div>
-                        <span class="menu-badge">7</span>
-                    </a>
-                </li>
+  <!-- الشريط الجانبي -->
+  <nav id="sidebar">
+    <div class="p-3">
+      <div class="text-center user-profile mb-3 border-bottom pb-3">
+        <div class="user-avatar"><i class="fas fa-user-md"></i></div>
+        <div class="user-name fs-5 fw-semibold">المسؤول</div>
+        <div class="user-role badge bg-light text-primary">مدير النظام</div>
+      </div>
+      <div class="navbar-title mb-3"><span class="fs-5 text-primary">التنقل الرئيسي</span></div>
+      <ul class="nav flex-column">
+        <li class="nav-item mb-1">
+          <a href="dashboard.php" class="nav-link active d-flex align-items-center">
+            <i class="fas fa-home me-2"></i> لوحة التحكم
+          </a>
+        </li>
+        <li class="nav-item mb-1">
+          <a class="nav-link d-flex align-items-center" data-bs-toggle="collapse" href="#doctorsMenu" role="button" aria-expanded="false">
+            <i class="fas fa-user-md me-2"></i> الأطباء
+          </a>
+          <div class="collapse" id="doctorsMenu">
+            <ul class="nav flex-column ps-4">
+              <li class="nav-item"><a href="doctor-specilization.php" class="nav-link">تخصص الطبيب</a></li>
+              <li class="nav-item"><a href="add-doctor.php" class="nav-link">إضافة طبيب</a></li>
+              <li class="nav-item"><a href="Manage-doctors.php" class="nav-link">إدارة الأطباء</a></li>
             </ul>
-            
-            <h5 class="menu-section-title">الاستفسارات والتقارير</h5>
-            
-            <ul class="menu-list">
-                <li class="menu-item">
-                    <a href="javascript:void(0)" class="menu-link">
-                        <div class="menu-icon">
-                            <i class="fas fa-comments"></i>
-                        </div>
-                        <div class="menu-text">الاستفسارات</div>
-                        <i class="fas fa-chevron-down menu-arrow"></i>
-                    </a>
-                    <ul class="submenu">
-                        <li class="submenu-item">
-                            <a href="unread-queries.php" class="submenu-link">استفسارات جديدة <span class="menu-badge">5</span></a>
-                        </li>
-                        <li class="submenu-item">
-                            <a href="read-query.php" class="submenu-link">الاستفسارات المجابة</a>
-                        </li>
-                    </ul>
-                </li>
-                
-                <li class="menu-item">
-                    <a href="doctor-logs.php" class="menu-link">
-                        <div class="menu-icon">
-                            <i class="fas fa-clipboard-list"></i>
-                        </div>
-                        <div class="menu-text">سجلات الأطباء</div>
-                    </a>
-                </li>
-                
-                <li class="menu-item">
-                    <a href="reports.php" class="menu-link">
-                        <div class="menu-icon">
-                            <i class="fas fa-chart-bar"></i>
-                        </div>
-                        <div class="menu-text">التقارير والإحصائيات</div>
-                    </a>
-                </li>
+          </div>
+        </li>
+        <li class="nav-item mb-1"><a href="manage-users.php" class="nav-link"><i class="fas fa-users me-2"></i> إدارة المستخدمين</a></li>
+        <li class="nav-item mb-1"><a href="manage-patient.php" class="nav-link"><i class="fas fa-user-injured me-2"></i> إدارة المرضى</a></li>
+        <li class="nav-item mb-1"><a href="appointment-history.php" class="nav-link"><i class="fas fa-history me-2"></i> تاريخ المواعيد</a></li>
+        <li class="nav-item mb-1">
+          <a data-bs-toggle="collapse" href="#queriesMenu" class="nav-link d-flex align-items-center">
+            <i class="fas fa-comments me-2"></i> استعلامات الاتصال
+          </a>
+          <div class="collapse" id="queriesMenu">
+            <ul class="nav flex-column ps-4">
+              <li class="nav-item"><a href="unread-queries.php" class="nav-link">استعلام غير مقروء</a></li>
+              <li class="nav-item"><a href="read-query.php" class="nav-link">قراءة الاستعلام</a></li>
             </ul>
-            
-            <h5 class="menu-section-title">إعدادات النظام</h5>
-            
-            <ul class="menu-list">
-                <li class="menu-item">
-                    <a href="settings.php" class="menu-link">
-                        <div class="menu-icon">
-                            <i class="fas fa-cog"></i>
-                        </div>
-                        <div class="menu-text">الإعدادات</div>
-                    </a>
-                </li>
-                
-                <li class="menu-item">
-                    <a href="logout.php" class="menu-link">
-                        <div class="menu-icon">
-                            <i class="fas fa-sign-out-alt"></i>
-                        </div>
-                        <div class="menu-text">تسجيل الخروج</div>
-                    </a>
-                </li>
-            </ul>
-        </div>
-
-        <!-- تذييل الشريط الجانبي -->
-        <div class="sidebar-footer">
-            <p>الإصدار 1.0.0</p>
-        </div>
+          </div>
+        </li>
+        <li class="nav-item mb-1"><a href="doctor-logs.php" class="nav-link"><i class="fas fa-clipboard-list me-2"></i> سجلات الجلسات</a></li>
+        <li class="nav-item mb-1"><a href="between-dates-reports.php" class="nav-link"><i class="fas fa-chart-bar me-2"></i> تقارير التواريخ</a></li>
+        <li class="nav-item"><a href="logout.php" class="nav-link"><i class="fas fa-sign-out-alt me-2"></i> تسجيل الخروج</a></li>
+      </ul>
     </div>
+  </nav>
 
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   
-    <!-- أكواد الجافاسكريبت -->
-    <script>
-        // تبديل الشريط الجانبي على الأجهزة المحمولة
-
-        // تفعيل القوائم المنسدلة
-        document.addEventListener('DOMContentLoaded', function() {
-            const menuItems = document.querySelectorAll('.menu-item');
-            
-            menuItems.forEach(item => {
-                const link = item.querySelector('.menu-link');
-                
-                if (link.getAttribute('href') === 'javascript:void(0)') {
-                    link.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        
-                        // إغلاق القوائم الأخرى
-                        menuItems.forEach(otherItem => {
-                            if (otherItem !== item && otherItem.classList.contains('active')) {
-                                otherItem.classList.remove('active');
-                            }
-                        });
-                        
-                        // فتح/إغلاق القائمة الحالية
-                        item.classList.toggle('active');
-                    });
-                }
-            });
-            
-            // إغلاق القوائم عند النقر خارجها
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('.menu-item')) {
-                    menuItems.forEach(item => {
-                        item.classList.remove('active');
-                    });
-                }
-            });
-        });
-    </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const sidebar = document.getElementById('sidebar');
+      const sidebarToggle = document.getElementById('sidebarToggle');
+      const mainContent = document.querySelector('.main-content');
+      
+      // تبديل الشريط الجانبي
+      sidebarToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('active');
+      });
+      
+      // إغلاق الشريط الجانبي عند النقر خارجها على الشاشات الصغيرة
+      document.addEventListener('click', function(e) {
+        if (window.innerWidth <= 992) {
+          if (!sidebar.contains(e.target) && e.target !== sidebarToggle && !sidebarToggle.contains(e.target)) {
+            sidebar.classList.remove('active');
+          }
+        }
+      });
+      
+      // إغلاق القوائم المنسدلة عند النقر خارجها
+      document.addEventListener('click', function(e) {
+        if (!e.target.matches('.nav-link[data-bs-toggle="collapse"]')) {
+          document.querySelectorAll('.collapse.show').forEach(function(openCollapse) {
+            if (!openCollapse.contains(e.target)) {
+              const collapseInstance = bootstrap.Collapse.getInstance(openCollapse);
+              if (collapseInstance) {
+                collapseInstance.hide();
+              }
+            }
+          });
+        }
+      });
+    });
+  </script>
 </body>
 </html>

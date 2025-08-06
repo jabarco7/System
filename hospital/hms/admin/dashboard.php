@@ -2,17 +2,18 @@
 session_start();
 error_reporting(0);
 include('include/config.php');
+
 if (strlen($_SESSION['id']) == 0) {
     header('location:logout.php');
     exit();
 }
 
-// Get statistics
+// الإحصائيات
 $users_count = mysqli_num_rows(mysqli_query($con, "SELECT * FROM users"));
 $doctors_count = mysqli_num_rows(mysqli_query($con, "SELECT * FROM doctors"));
 $appointments_count = mysqli_num_rows(mysqli_query($con, "SELECT * FROM appointment"));
 $patients_count = mysqli_num_rows(mysqli_query($con, "SELECT * FROM tblpatient"));
-$inquiries_count = mysqli_num_rows(mysqli_query($con, "SELECT * FROM tblcontactus where IsRead is null"));
+$inquiries_count = mysqli_num_rows(mysqli_query($con, "SELECT * FROM tblcontactus WHERE IsRead IS NULL"));
 ?>
 
 <!DOCTYPE html>
@@ -21,14 +22,15 @@ $inquiries_count = mysqli_num_rows(mysqli_query($con, "SELECT * FROM tblcontactu
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>المسؤول | لوحة التحكم</title>
-    
-    <!-- الخطوط وأيقونات فونت أويسوم -->
+
+    <!-- الخطوط والأيقونات -->
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+
+    <!-- CSS مخصص -->
     <style>
         :root {
             --primary: #3498db;
@@ -266,7 +268,7 @@ $inquiries_count = mysqli_num_rows(mysqli_query($con, "SELECT * FROM tblcontactu
         /* تصميم المحتوى الرئيسي */
         .main-content {
             flex: 1;
-            margin-right: 280px;
+            margin-right: 50px;
             padding: 20px;
             transition: margin-right 0.3s;
         }
@@ -527,9 +529,6 @@ $inquiries_count = mysqli_num_rows(mysqli_query($con, "SELECT * FROM tblcontactu
                 transform: translateX(0);
             }
             
-            .main-content {
-                margin-right: 0;
-            }
             
             .mobile-toggle {
                 display: flex;
@@ -554,189 +553,12 @@ $inquiries_count = mysqli_num_rows(mysqli_query($con, "SELECT * FROM tblcontactu
         }
     </style>
 </head>
+
 <body>
     <div class="admin-dashboard">
-        <!-- الشريط الجانبي الحديث -->
-        <div class="sidebar app-aside" id="sidebar">
-            <div class="sidebar-container">
-                <!-- ملف تعريف المستخدم -->
-                <div class="user-profile">
-                    <div class="user-avatar">
-                        <i class="fas fa-user-md"></i>
-                    </div>
-                    <div class="user-name">المسؤول</div>
-                    <div class="user-role">مدير النظام</div>
-                </div>
-                
-                <div class="navbar-title">
-                    <span>التنقل الرئيسي</span>
-                </div>
-                
-                <ul class="main-navigation-menu">
-                    <li class="active">
-                        <a href="dashboard.php">
-                            <div class="item-content">
-                                <div class="item-media">
-                                    <i class="fas fa-home"></i>
-                                </div>
-                                <div class="item-inner">
-                                    <span class="title">لوحة التحكم</span>
-                                </div>
-                            </div>
-                        </a>
-                    </li>
-                    
-                    <li>
-                        <a href="javascript:void(0)">
-                            <div class="item-content">
-                                <div class="item-media">
-                                    <i class="fas fa-user-md"></i>
-                                </div>
-                                <div class="item-inner">
-                                    <span class="title">الأطباء</span>
-                                    <i class="icon-arrow fas fa-chevron-down"></i>
-                                </div>
-                            </div>
-                        </a>
-                        <ul class="sub-menu">
-                            <li>
-                                <a href="doctor-specilization.php">
-                                    <span class="title">تخصص الطبيب</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="add-doctor.php">
-                                    <span class="title">اضافة طبيب</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="Manage-doctors.php">
-                                    <span class="title">إدارة الأطباء</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    
-                    <li>
-                        <a href="manage-users.php">
-                            <div class="item-content">
-                                <div class="item-media">
-                                    <i class="fas fa-users"></i>
-                                </div>
-                                <div class="item-inner">
-                                    <span class="title">إدارة المستخدمين</span>
-                                </div>
-                            </div>
-                        </a>
-                    </li>
-                    
-                    <li>
-                        <a href="manage-patient.php">
-                            <div class="item-content">
-                                <div class="item-media">
-                                    <i class="fas fa-user-injured"></i>
-                                </div>
-                                <div class="item-inner">
-                                    <span class="title">إدارة المرضى</span>
-                                </div>
-                            </div>
-                        </a>
-                    </li>
-                    
-                    <li>
-                        <a href="appointment-history.php">
-                            <div class="item-content">
-                                <div class="item-media">
-                                    <i class="fas fa-history"></i>
-                                </div>
-                                <div class="item-inner">
-                                    <span class="title">تاريخ المواعيد</span>
-                                </div>
-                            </div>
-                        </a>
-                    </li>
-                    
-                    <li>
-                        <a href="javascript:void(0)">
-                            <div class="item-content">
-                                <div class="item-media">
-                                    <i class="fas fa-comments"></i>
-                                </div>
-                                <div class="item-inner">
-                                    <span class="title">استعلامات الاتصال</span>
-                                    <i class="icon-arrow fas fa-chevron-down"></i>
-                                </div>
-                            </div>
-                        </a>
-                        <ul class="sub-menu">
-                            <li>
-                                <a href="unread-queries.php">
-                                    <span class="title">استعلام غير مقروء</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="read-query.php">
-                                    <span class="title">قراءة الاستعلام</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    
-                    <li>
-                        <a href="doctor-logs.php">
-                            <div class="item-content">
-                                <div class="item-media">
-                                    <i class="fas fa-clipboard-list"></i>
-                                </div>
-                                <div class="item-inner">
-                                    <span class="title">سجلات جلسات الأطباء</span>
-                                </div>
-                            </div>
-                        </a>
-                    </li>
-                    
-                    <li>
-                        <a href="user-logs.php">
-                            <div class="item-content">
-                                <div class="item-media">
-                                    <i class="fas fa-clipboard-list"></i>
-                                </div>
-                                <div class="item-inner">
-                                    <span class="title">سجلات جلسات المستخدمون</span>
-                                </div>
-                            </div>
-                        </a>
-                    </li>
-                    
-                    <li>
-                        <a href="between-dates-reports.php">
-                            <div class="item-content">
-                                <div class="item-media">
-                                    <i class="fas fa-chart-bar"></i>
-                                </div>
-                                <div class="item-inner">
-                                    <span class="title">تقارير بين التواريخ</span>
-                                </div>
-                            </div>
-                        </a>
-                    </li>
-                    
-                    <li>
-                        <a href="logout.php">
-                            <div class="item-content">
-                                <div class="item-media">
-                                    <i class="fas fa-sign-out-alt"></i>
-                                </div>
-                                <div class="item-inner">
-                                    <span class="title">تسجيل الخروج</span>
-                                </div>
-                            </div>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-        
+        <!-- الشريط الجانبي -->
+        <?php include('include/sidebar.php'); ?>
+
         <!-- المحتوى الرئيسي -->
         <div class="main-content">
             <!-- شريط التنقل العلوي -->
@@ -749,50 +571,50 @@ $inquiries_count = mysqli_num_rows(mysqli_query($con, "SELECT * FROM tblcontactu
                     <img src="https://ui-avatars.com/api/?name=المسؤول&background=3498db&color=fff" alt="Admin">
                 </div>
             </div>
-            
-            <!-- قسم الترحيب -->
+
+            <!-- الترحيب -->
             <div class="welcome-section">
                 <h1><i class="fas fa-tachometer-alt me-3"></i>لوحة التحكم</h1>
                 <p class="mb-0">مرحباً بك في نظام إدارة المستشفى، هنا يمكنك إدارة كافة جوانب النظام</p>
             </div>
-            
-            <!-- إحصائيات النظام -->
+
+            <!-- الإحصائيات -->
             <div class="stats-grid">
                 <div class="stat-card users">
                     <i class="fas fa-users"></i>
                     <h3><?php echo $users_count; ?></h3>
                     <p>إجمالي المستخدمين</p>
                 </div>
-                
+
                 <div class="stat-card doctors">
                     <i class="fas fa-user-md"></i>
                     <h3><?php echo $doctors_count; ?></h3>
                     <p>إجمالي الأطباء</p>
                 </div>
-                
+
                 <div class="stat-card appointments">
                     <i class="fas fa-calendar-check"></i>
                     <h3><?php echo $appointments_count; ?></h3>
                     <p>إجمالي المواعيد</p>
                 </div>
-                
+
                 <div class="stat-card patients">
                     <i class="fas fa-user-injured"></i>
                     <h3><?php echo $patients_count; ?></h3>
                     <p>إجمالي المرضى</p>
                 </div>
-                
+
                 <div class="stat-card inquiries">
                     <i class="fas fa-question-circle"></i>
                     <h3><?php echo $inquiries_count; ?></h3>
                     <p>استفسارات جديدة</p>
                 </div>
             </div>
-            
-            <!-- نشاطات حديثة -->
+
+            <!-- النشاطات الحديثة -->
             <div class="recent-activity">
                 <h4 class="section-title">النشاطات الحديثة</h4>
-                
+
                 <div class="activity-item activity-users">
                     <div class="activity-icon">
                         <i class="fas fa-user-plus"></i>
@@ -801,11 +623,9 @@ $inquiries_count = mysqli_num_rows(mysqli_query($con, "SELECT * FROM tblcontactu
                         <h5>مستخدم جديد</h5>
                         <p>تم تسجيل مستخدم جديد في النظام</p>
                     </div>
-                    <div class="activity-time">
-                        قبل ساعتين
-                    </div>
+                    <div class="activity-time">قبل ساعتين</div>
                 </div>
-                
+
                 <div class="activity-item activity-doctors">
                     <div class="activity-icon">
                         <i class="fas fa-stethoscope"></i>
@@ -814,11 +634,9 @@ $inquiries_count = mysqli_num_rows(mysqli_query($con, "SELECT * FROM tblcontactu
                         <h5>طبيب جديد</h5>
                         <p>تم إضافة طبيب جديد إلى النظام</p>
                     </div>
-                    <div class="activity-time">
-                        قبل 5 ساعات
-                    </div>
+                    <div class="activity-time">قبل 5 ساعات</div>
                 </div>
-                
+
                 <div class="activity-item activity-appointments">
                     <div class="activity-icon">
                         <i class="fas fa-calendar-plus"></i>
@@ -827,11 +645,9 @@ $inquiries_count = mysqli_num_rows(mysqli_query($con, "SELECT * FROM tblcontactu
                         <h5>موعد جديد</h5>
                         <p>تم حجز موعد جديد مع الدكتور أحمد</p>
                     </div>
-                    <div class="activity-time">
-                        منذ يوم واحد
-                    </div>
+                    <div class="activity-time">منذ يوم واحد</div>
                 </div>
-                
+
                 <div class="activity-item activity-users">
                     <div class="activity-icon">
                         <i class="fas fa-file-medical"></i>
@@ -840,61 +656,49 @@ $inquiries_count = mysqli_num_rows(mysqli_query($con, "SELECT * FROM tblcontactu
                         <h5>تقرير جديد</h5>
                         <p>تم رفع تقرير طبي جديد</p>
                     </div>
-                    <div class="activity-time">
-                        منذ يومين
-                    </div>
+                    <div class="activity-time">منذ يومين</div>
                 </div>
             </div>
-            
+
+            <!-- التذييل -->
             <div class="dashboard-footer">
-                نظام إدارة المستشفى &copy; <?php echo date('Y - dashboard.php:850'); ?> - جميع الحقوق محفوظة
+                نظام إدارة المستشفى &copy; <?php echo date('Y - dashboard.php:665'); ?> - جميع الحقوق محفوظة
             </div>
         </div>
-        
-        <!-- زر تبديل الشريط الجانبي للأجهزة المحمولة -->
+
+        <!-- زر القائمة الجانبية في الجوال -->
         <button class="mobile-toggle">
             <i class="fas fa-bars"></i>
         </button>
     </div>
-    
-    <!-- الأكواد البرمجية -->
+    	<?php include('include/setting.php');?>
+
+
+    <!-- JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // تابع لتبديل الشريط الجانبي على الأجهزة المحمولة
-        document.querySelector('.mobile-toggle').addEventListener('click', function() {
+        // تبديل الشريط الجانبي في الجوال
+        document.querySelector('.mobile-toggle').addEventListener('click', function () {
             document.querySelector('.sidebar.app-aside').classList.toggle('active');
         });
-        
-        // إضافة تأثيرات للبطاقات الإحصائية
+
+        // تأثير hover على البطاقات
         document.querySelectorAll('.stat-card').forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-5px)';
-            });
-            
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0)';
-            });
+            card.addEventListener('mouseenter', () => card.style.transform = 'translateY(-5px)');
+            card.addEventListener('mouseleave', () => card.style.transform = 'translateY(0)');
         });
-        
-        // تفعيل القوائم المنسدلة
-        document.addEventListener('DOMContentLoaded', function() {
+
+        // القائمة الجانبية المنسدلة
+        document.addEventListener('DOMContentLoaded', function () {
             const menuItems = document.querySelectorAll('.main-navigation-menu > li');
-            
             menuItems.forEach(item => {
                 const link = item.querySelector('a');
-                
                 if (link.getAttribute('href') === 'javascript:void(0)') {
-                    link.addEventListener('click', function(e) {
+                    link.addEventListener('click', function (e) {
                         e.preventDefault();
-                        
-                        // إغلاق القوائم الأخرى
-                        menuItems.forEach(otherItem => {
-                            if (otherItem !== item && otherItem.classList.contains('active')) {
-                                otherItem.classList.remove('active');
-                            }
+                        menuItems.forEach(other => {
+                            if (other !== item) other.classList.remove('active');
                         });
-                        
-                        // فتح/إغلاق القائمة الحالية
                         item.classList.toggle('active');
                     });
                 }

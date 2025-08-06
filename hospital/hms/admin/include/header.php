@@ -2,63 +2,37 @@
 error_reporting(0);
 ?>
 
-<header class="navbar navbar-default navbar-static-top">
-  <!-- بداية: رأس الشريط -->
-  <div class="navbar-header">
+<header class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" style="height: 70px; z-index: 1030;" dir="rtl">
+  <div class="container-fluid d-flex align-items-center justify-content-between px-3">
     
     <!-- زر إظهار الشريط الجانبي للجوال -->
-    <a href="#" class="sidebar-mobile-toggler pull-left hidden-md hidden-lg btn btn-navbar sidebar-toggle"
-       data-toggle-class="app-slide-off" data-toggle-target="#app" data-toggle-click-outside="#sidebar">
-    </a>
+    <button class="d-block d-lg-none btn btn-outline-light" onclick="toggleSidebar()" title="إظهار القائمة">
+      ☰
+    </button>
 
     <!-- شعار النظام -->
-    <a class="navbar-brand" href="#">
-      <h2 style="padding-top: 20%; color:white">HMS</h2>
-    </a>
+    <a href="#" class="navbar-brand mb-0 h1 text-white">HMS</a>
 
-    <!-- زر إظهار الشريط الجانبي للحواسيب -->
-    <a href="#" class="sidebar-toggler pull-right visible-md visible-lg"
-       data-toggle-class="app-sidebar-closed" data-toggle-target="#app">
-    </a>
+    <!-- عنوان النظام -->
+    <h5 class="text-white mb-0 d-none d-md-block">نظام إدارة المستشفيات</h5>
 
-    <!-- زر قائمة الجوال -->
-    <a class="pull-right menu-toggler visible-xs-block" id="menu-toggler" data-toggle="collapse" href=".navbar-collapse">
-      <span class="sr-only">تبديل التنقل</span>
-      <i class="ti-view-grid"></i>
-    </a>
-  </div>
-  <!-- نهاية: رأس الشريط -->
-
-  <!-- بداية: عناصر الشريط -->
-  <div class="navbar-collapse collapse">
-    <ul class="nav navbar-right">
-      
-      <!-- عنوان النظام -->
-      <li style="padding-top: 2%;">
-        <h2 style="color: white;">نظام إدارة المستشفيات</h2>
-      </li>
-
-      <!-- حساب المستخدم -->
-      <li class="dropdown current-user">
-        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-          <img src="assets/images/images.jpg" alt="المستخدم">
-          <span class="username">
-            المسؤول
-            <i class="ti-angle-down"></i>
-          </span>
-        </a>
-        <ul class="dropdown-menu dropdown-dark">
-          <li><a href="change-password.php">تغيير كلمة المرور</a></li>
-          <li><a href="logout.php">تسجيل الخروج</a></li>
-        </ul>
-      </li>
-    </ul>
-
-    <!-- زر إغلاق القائمة على الجوال -->
-    <div class="close-handle visible-xs-block menu-toggler" data-toggle="collapse" href=".navbar-collapse">
-      <div class="arrow-left"></div>
-      <div class="arrow-right"></div>
+    <!-- قائمة المستخدم -->
+    <div class="dropdown">
+      <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+        <img src="assets/images/images.jpg" alt="المستخدم" width="32" height="32" class="rounded-circle ms-2">
+        <strong>المسؤول</strong>
+      </a>
+      <ul class="dropdown-menu dropdown-menu-end text-end">
+        <li><a class="dropdown-item" href="change-password.php">تغيير كلمة المرور</a></li>
+        <li><a class="dropdown-item" href="logout.php">تسجيل الخروج</a></li>
+      </ul>
     </div>
+
   </div>
-  <!-- نهاية: عناصر الشريط -->
 </header>
+
+<script>
+  function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("active");
+  }
+</script>

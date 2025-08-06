@@ -2,262 +2,481 @@
 session_start();
 error_reporting(0);
 include('include/config.php');
-if(strlen($_SESSION['id']==0)) {
- header('location:logout.php');
-  } else{
 
-if(isset($_POST['submit']))
-{	$docspecialization=$_POST['Doctorspecialization'];
-$docname=$_POST['docname'];
-$docaddress=$_POST['clinicaddress'];
-$docfees=$_POST['docfees'];
-$doccontactno=$_POST['doccontact'];
-$docemail=$_POST['docemail'];
-$password=md5($_POST['npass']);
-$sql=mysqli_query($con,"insert into doctors(specilization,doctorName,address,docFees,contactno,docEmail,password) values('$docspecialization','$docname','$docaddress','$docfees','$doccontactno','$docemail','$password')");
-if($sql)
-{
-echo "<script>alert('تمت إضافة معلومات الطبيب بنجاح');</script>";
-echo "<script>window.location.href ='manage-doctors.php'</script>";
+if (strlen($_SESSION['id']) == 0) {
+    header('location:logout.php');
+    exit();
+} else {
+    if (isset($_POST['submit'])) {
+        $docspecialization = $_POST['Doctorspecialization'];
+        $docname = $_POST['docname'];
+        $docaddress = $_POST['clinicaddress'];
+        $docfees = $_POST['docfees'];
+        $doccontactno = $_POST['doccontact'];
+        $docemail = $_POST['docemail'];
+        $password = md5($_POST['npass']);
 
-}
-}
+        $stmt = $con->prepare("INSERT INTO doctors(specilization, doctorName, address, docFees, contactno, docEmail, password) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("sssssss", $docspecialization, $docname, $docaddress, $docfees, $doccontactno, $docemail, $password);
+
+        if ($stmt->execute()) {
+            $_SESSION['success'] = "تمت إضافة معلومات الطبيب بنجاح!";
+            header('Location: Manage-doctors.php');
+            exit();
+        } else {
+            $_SESSION['error'] = "حدث خطأ أثناء الإضافة. حاول مرة أخرى.";
+        }
+
+        $stmt->close();
+    }
 ?>
 <!DOCTYPE html>
-<html lang="en">
-	<head>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المسؤول | اضافة طبيب</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2c3e50;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --light: #f8f9fa;
+            --dark: #343a40;
+        }
+        
+        * {
+            font-family: 'Tajawal', sans-serif;
+        }
+        
+        body {
+            background-color: #f0f5f9;
+            padding-top: 20px;
+        }
+        
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+			margin-top: 40px;
+        }
+        
+        .page-header {
+            background: linear-gradient(90deg, var(--primary), #4aa8e0);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .page-header h1 {
+            font-weight: 700;
+            margin-bottom: 0;
+        }
+        
+        .breadcrumb {
+            background-color: transparent;
+            padding: 0;
+            margin-bottom: 0;
+        }
+        
+        .breadcrumb-item a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+        }
+        
+        .breadcrumb-item.active {
+            color: white;
+        }
+        
+        .breadcrumb-item + .breadcrumb-item::before {
+            color: rgba(255, 255, 255, 0.8);
+            content: ">";
+        }
+        
+        .form-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+        
+        .form-header {
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .form-header h5 {
+            font-weight: 700;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-header h5 i {
+            color: var(--primary);
+            background-color: rgba(52, 152, 219, 0.1);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 8px;
+        }
+        
+        .form-control, .form-select {
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .btn-submit {
+            background: linear-gradient(90deg, var(--success), #2ecc71);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .alert-message {
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            animation: fadeIn 0.5s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert-success {
+            background-color: rgba(39, 174, 96, 0.15);
+            color: var(--success);
+            border-left: 4px solid var(--success);
+        }
+        
+        .alert-error {
+            background-color: rgba(231, 76, 60, 0.15);
+            color: var(--danger);
+            border-left: 4px solid var(--danger);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .password-strength {
+            height: 5px;
+            border-radius: 5px;
+            margin-top: 5px;
+            background-color: #eee;
+            overflow: hidden;
+        }
+        
+        .password-strength-meter {
+            height: 100%;
+            width: 0;
+            transition: width 0.3s;
+        }
+        
+        .strength-weak { background-color: var(--danger); width: 30%; }
+        .strength-medium { background-color: #f39c12; width: 60%; }
+        .strength-strong { background-color: var(--success); width: 100%; }
+        
+        .password-tips {
+            font-size: 0.85rem;
+            color: var(--gray);
+            margin-top: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .page-header {
+                padding: 15px;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+            
+            .main-container {
+                padding: 0 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container">
+		<?php include('include/header.php'); ?>
 		
-		<title>المسؤول | اضافة طبيب</title>
-		
-		<link href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic" rel="stylesheet" type="text/css" />
-		<link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
-		<link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
-		<link rel="stylesheet" href="vendor/themify-icons/themify-icons.min.css">
-		<link href="vendor/animate.css/animate.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/perfect-scrollbar/perfect-scrollbar.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/switchery/switchery.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-touchspin/jquery.bootstrap-touchspin.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/select2/select2.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-datepicker/bootstrap-datepicker3.standalone.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-timepicker/bootstrap-timepicker.min.css" rel="stylesheet" media="screen">
-		<link rel="stylesheet" href="assets/css/styles.css">
-		<link rel="stylesheet" href="assets/css/plugins.css">
-		<link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
-<script type="text/javascript">
-function valid()
-{
- if(document.adddoc.npass.value!= document.adddoc.cfpass.value)
-{
-alert("حقل كلمة المرور وحقل تأكيد كلمة المرور غير متطابقين !!");
-document.adddoc.cfpass.focus();
-return false;
-}
-return true;
-}
-</script>
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h1><i class="fas fa-user-md me-2"></i>إضافة طبيب جديد</h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="dashboard.php">المسؤول</a></li>
+                            <li class="breadcrumb-item active">إضافة طبيب</li>
+                        </ol>
+                    </nav>
+                </div>
+                <a href="Manage-doctors.php" class="btn btn-light">
+                    <i class="fas fa-arrow-left me-2"></i>العودة إلى قائمة الأطباء
+                </a>
+            </div>
+        </div>
+        
+        <!-- Alerts -->
+        <?php if(isset($_SESSION['success'])): ?>
+            <div class="alert-message alert-success">
+                <i class="fas fa-check-circle"></i>
+                <?php echo $_SESSION['success - add-doctor.php:275']; unset($_SESSION['success']); ?>
+            </div>
+        <?php endif; ?>
+        
+        <?php if(isset($_SESSION['error'])): ?>
+            <div class="alert-message alert-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <?php echo $_SESSION['error - add-doctor.php:282']; unset($_SESSION['error']); ?>
+            </div>
+        <?php endif; ?>
+        
+        <!-- Form Container -->
+        <div class="form-container">
+            <div class="form-header">
+                <h5><i class="fas fa-user-plus"></i>معلومات الطبيب الأساسية</h5>
+            </div>
+            
+            <form role="form" name="adddoc" method="post" onsubmit="return valid();">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" for="Doctorspecialization">تخصص الطبيب</label>
+                            <select name="Doctorspecialization" class="form-select" required>
+                                <option value="">اختر التخصص...</option>
+                                <?php
+                                $ret = mysqli_query($con, "SELECT * FROM doctorspecilization");
+                                while ($row = mysqli_fetch_array($ret)) {
+                                    echo '<option value=" - add-doctor.php:302' . htmlentities($row['specilization']) . '">' . htmlentities($row['specilization']) . '</option>';
+                                }
+                                ?>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" for="docname">اسم الطبيب</label>
+                            <input type="text" name="docname" class="form-control" placeholder="أدخل اسم الطبيب" required>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label class="form-label" for="clinicaddress">موقع عيادة الطبيب</label>
+                            <textarea name="clinicaddress" class="form-control" placeholder="أدخل موقع عيادة الطبيب" rows="3" required></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label" for="docfees">رسوم الاستشارة (ريال)</label>
+                            <input type="text" name="docfees" class="form-control" placeholder="أدخل رسوم الاستشارة" required>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label" for="doccontact">رقم هاتف الطبيب</label>
+                            <input type="text" name="doccontact" class="form-control" placeholder="أدخل رقم الهاتف" required>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label" for="docemail">البريد الإلكتروني</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                <input type="email" id="docemail" name="docemail" class="form-control" placeholder="أدخل البريد الإلكتروني" required onblur="checkemailAvailability()">
+                            </div>
+                            <div id="email-availability-status" class="mt-2"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" for="npass">كلمة المرور</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password" id="npass" name="npass" class="form-control" placeholder="كلمة المرور" required onkeyup="checkPasswordStrength()">
+                            </div>
+                            <div class="password-strength mt-2">
+                                <div class="password-strength-meter" id="password-strength-meter"></div>
+                            </div>
+                            <div class="password-tips">
+                                يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل، وتشمل أرقام وحروف كبيرة وصغيرة
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" for="cfpass">تأكيد كلمة المرور</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password" name="cfpass" class="form-control" placeholder="تأكيد كلمة المرور" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <button type="submit" name="submit" id="submit" class="btn btn-submit">
+                            <i class="fas fa-save"></i> حفظ الطبيب
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function valid() {
+            const password = document.adddoc.npass.value;
+            const confirmPassword = document.adddoc.cfpass.value;
+            
+            // Check password length
+            if (password.length < 8) {
+                alert("كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل!");
+                return false;
+            }
+            
+            // Check password complexity
+            if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+                alert("كلمة المرور يجب أن تحتوي على أحرف كبيرة وصغيرة وأرقام!");
+                return false;
+            }
+            
+            // Check password match
+            if (password !== confirmPassword) {
+                alert("حقل كلمة المرور وحقل تأكيد كلمة المرور غير متطابقين!");
+                document.adddoc.cfpass.focus();
+                return false;
+            }
+            
+            return true;
+        }
 
-<script>
-function checkemailAvailability() {
-$("#loaderIcon").show();
-jQuery.ajax({
-url: "check_availability.php",
-data:'emailid='+$("#docemail").val(),
-type: "POST",
-success:function(data){
-$("#email-availability-status").html(data);
-$("#loaderIcon").hide();
-},
-error:function (){}
-});
-}
-</script>
-	</head>
-	<body>
-		<div id="app">		
-<?php include('include/sidebar.php');?>
-			<div class="app-content">
-				
-						<?php include('include/header.php');?>
-						
-				<!-- end: TOP NAVBAR -->
-				<div class="main-content" >
-					<div class="wrap-content container" id="container">
-						<!-- start: PAGE TITLE -->
-						<section id="page-title">
-							<div class="row">
-								<div class="col-sm-8">
-									<h1 class="mainTitle">المسؤول | اضافة طبيب</h1>
-																	</div>
-								<ol class="breadcrumb">
-									<li>
-										<span>المسؤول</span>
-									</li>
-									<li class="active">
-										<span>اضافة طبيب</span>
-									</li>
-								</ol>
-							</div>
-						</section>
-						<!-- end: PAGE TITLE -->
-						<!-- start: BASIC EXAMPLE -->
-						<div class="container-fluid container-fullw bg-white">
-							<div class="row">
-								<div class="col-md-12">
-									
-									<div class="row margin-top-30">
-										<div class="col-lg-8 col-md-12">
-											<div class="panel panel-white">
-												<div class="panel-heading">
-													<h5 class="panel-title">اضافة طبيب</h5>
-												</div>
-												<div class="panel-body">
-									
-													<form role="form" name="adddoc" method="post" onSubmit="return valid();">
-														<div class="form-group">
-															<label for="DoctorSpecialization">
-																تخصص الطبيب
-															</label>
-							<select name="Doctorspecialization" class="form-control" required="true">
-																<option value="">اختار التخصص</option>
-<?php $ret=mysqli_query($con,"select * from doctorspecilization");
-while($row=mysqli_fetch_array($ret))
-{
-?>
-																<option value="<?php echo htmlentities($row['specilization']);?>">
-																	<?php echo htmlentities($row['specilization']);?>
-																</option>
-																<?php } ?>
-																
-															</select>
-														</div>
-
-<div class="form-group">
-															<label for="doctorname">
-																 اسم الطبيب
-															</label>
-					<input type="text" name="docname" class="form-control"  placeholder="ادخل اسم الطبيب" required="true">
-														</div>
-
-
-<div class="form-group">
-															<label for="address">
-																 موقع عيادة الطبيب
-															</label>
-					<textarea name="clinicaddress" class="form-control"  placeholder="ادخل موقع عيادة الطبيب" required="true"></textarea>
-														</div>
-<div class="form-group">
-															<label for="fess">
-																 رسوم الاستشارة
-															</label>
-					<input type="text" name="docfees" class="form-control"  placeholder="ادخل رسوم الاستشارة" required="true">
-														</div>
-	
-<div class="form-group">
-									<label for="fess">
-																 رقم هاتف الطبيب
-															</label>
-					<input type="text" name="doccontact" class="form-control"  placeholder="ادخل رقم هاتف الطبيب" required="true">
-														</div>
-
-<div class="form-group">
-									<label for="fess">
-																 البريد الالكتروني للطبيب
-															</label>
-<input type="email" id="docemail" name="docemail" class="form-control"  placeholder=" ادخل البريد الالكتروني للطبيب" required="true" onBlur="checkemailAvailability()">
-<span id="email-availability-status"></span>
-</div>
-
-
-
-														
-														<div class="form-group">
-															<label for="exampleInputPassword1">
-																 كلمة المرور
-															</label>
-					<input type="password" name="npass" class="form-control"  placeholder="كلمة المرور" required="required">
-														</div>
-														
-<div class="form-group">
-															<label for="exampleInputPassword2">
-																تكرار كلمة المرور
-															</label>
-									<input type="password" name="cfpass" class="form-control"  placeholder="تكرار كلمة المرور" required="required">
-														</div>
-														
-														
-														
-														<button type="submit" name="submit" id="submit" class="btn btn-o btn-primary">
-															حفظ
-														</button>
-													</form>
-												</div>
-											</div>
-										</div>
-											
-											</div>
-										</div>
-									<div class="col-lg-12 col-md-12">
-											<div class="panel panel-white">
-												
-												
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-						<!-- end: BASIC EXAMPLE -->
-			
-					
-					
-						
-						
-					
-						<!-- end: SELECT BOXES -->
-						
-					</div>
-				</div>
-			</div>
-			<!-- start: FOOTER -->
-	<?php include('include/footer.php');?>
-			<!-- end: FOOTER -->
-		
-			<!-- start: SETTINGS -->
-	<?php include('include/setting.php');?>
-			
-			<!-- end: SETTINGS -->
-		</div>
-		<!-- start: MAIN JAVASCRIPTS -->
-		<script src="vendor/jquery/jquery.min.js"></script>
-		<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-		<script src="vendor/modernizr/modernizr.js"></script>
-		<script src="vendor/jquery-cookie/jquery.cookie.js"></script>
-		<script src="vendor/perfect-scrollbar/perfect-scrollbar.min.js"></script>
-		<script src="vendor/switchery/switchery.min.js"></script>
-		<!-- end: MAIN JAVASCRIPTS -->
-		<!-- start: JAVASCRIPTS REQUIRED FOR THIS PAGE ONLY -->
-		<script src="vendor/maskedinput/jquery.maskedinput.min.js"></script>
-		<script src="vendor/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js"></script>
-		<script src="vendor/autosize/autosize.min.js"></script>
-		<script src="vendor/selectFx/classie.js"></script>
-		<script src="vendor/selectFx/selectFx.js"></script>
-		<script src="vendor/select2/select2.min.js"></script>
-		<script src="vendor/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
-		<script src="vendor/bootstrap-timepicker/bootstrap-timepicker.min.js"></script>
-		<!-- end: JAVASCRIPTS REQUIRED FOR THIS PAGE ONLY -->
-		<!-- start: CLIP-TWO JAVASCRIPTS -->
-		<script src="assets/js/main.js"></script>
-		<!-- start: JavaScript Event Handlers for this page -->
-		<script src="assets/js/form-elements.js"></script>
-		<script>
-			jQuery(document).ready(function() {
-				Main.init();
-				FormElements.init();
-			});
-		</script>
-		<!-- end: JavaScript Event Handlers for this page -->
-		<!-- end: CLIP-TWO JAVASCRIPTS -->
-	</body>
+        function checkemailAvailability() {
+            const email = $("#docemail").val();
+            if(email) {
+                $("#email-availability-status").html('<div class="text-info"><i class="fas fa-spinner fa-spin"></i> جار التحقق...</div>');
+                
+                $.ajax({
+                    url: "check_availability.php",
+                    data: 'emailid=' + email,
+                    type: "POST",
+                    success: function(data) {
+                        $("#email-availability-status").html(data);
+                    },
+                    error: function() {
+                        $("#email-availability-status").html('<div class="text-danger">خطأ في الاتصال بالخادم</div>');
+                    }
+                });
+            } else {
+                $("#email-availability-status").html('');
+            }
+        }
+        
+        function checkPasswordStrength() {
+            const password = $("#npass").val();
+            const meter = $("#password-strength-meter");
+            
+            // Reset meter
+            meter.removeClass("strength-weak strength-medium strength-strong");
+            
+            if(password.length === 0) {
+                return;
+            }
+            
+            // Check password strength
+            let strength = 0;
+            
+            // Length
+            if (password.length >= 8) strength += 1;
+            
+            // Contains uppercase
+            if (/[A-Z]/.test(password)) strength += 1;
+            
+            // Contains lowercase
+            if (/[a-z]/.test(password)) strength += 1;
+            
+            // Contains numbers
+            if (/\d/.test(password)) strength += 1;
+            
+            // Contains special characters
+            if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+            
+            // Update meter
+            if (strength < 2) {
+                meter.addClass("strength-weak");
+            } else if (strength < 4) {
+                meter.addClass("strength-medium");
+            } else {
+                meter.addClass("strength-strong");
+            }
+        }
+        
+        // Auto hide alerts after 5 seconds
+        setTimeout(() => {
+            $('.alert-message').fadeOut('slow');
+        }, 5000);
+    </script>
+</body>
 </html>
 <?php } ?>

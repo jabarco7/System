@@ -60,8 +60,8 @@ if(strlen($_SESSION['id']==0)) {
 									<div class="row">
 								<div class="col-md-12">
 									
-									<p style="color:red;"><?php echo htmlentities($_SESSION['msg']);?>
-								<?php echo htmlentities($_SESSION['msg']="");?></p>	
+									<p style="color:red; - appointment-history.php:63"><?php echo htmlentities($_SESSION['msg']);?>
+								<?php echo htmlentities($_SESSION['msg - appointment-history.php:64']="");?></p>	
 									<table class="table table-hover" id="sample-table-1">
 										<thead>
 											<tr>
@@ -86,28 +86,28 @@ while($row=mysqli_fetch_array($sql))
 ?>
 
 											<tr>
-												<td class="center"><?php echo $cnt;?>.</td>
-												<td class="hidden-xs"><?php echo $row['docname'];?></td>
-												<td class="hidden-xs"><?php echo $row['pname'];?></td>
-												<td><?php echo $row['doctorSpecialization'];?></td>
-												<td><?php echo $row['consultancyFees'];?></td>
-												<td><?php echo $row['appointmentDate'];?> / <?php echo
+												<td class="center - appointment-history.php:89"><?php echo $cnt;?>.</td>
+												<td class="hiddenxs - appointment-history.php:90"><?php echo $row['docname'];?></td>
+												<td class="hiddenxs - appointment-history.php:91"><?php echo $row['pname'];?></td>
+												<td><?php echo $row['doctorSpecialization - appointment-history.php:92'];?></td>
+												<td><?php echo $row['consultancyFees - appointment-history.php:93'];?></td>
+												<td><?php echo $row['appointmentDate - appointment-history.php:94'];?> / <?php echo
 												 $row['appointmentTime'];?>
 												</td>
-												<td><?php echo $row['postingDate'];?></td>
+												<td><?php echo $row['postingDate - appointment-history.php:97'];?></td>
 												<td>
 <?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
 {
-	echo "Active";
+	echo "Active - appointment-history.php:101";
 }
 if(($row['userStatus']==0) && ($row['doctorStatus']==1))  
 {
-	echo "Cancel by Patient";
+	echo "Cancel by Patient - appointment-history.php:105";
 }
 
 if(($row['userStatus']==1) && ($row['doctorStatus']==0))  
 {
-	echo "Cancel by Doctor";
+	echo "Cancel by Doctor - appointment-history.php:110";
 }
 
 
@@ -119,10 +119,10 @@ if(($row['userStatus']==1) && ($row['doctorStatus']==0))
 { 
 
 													
-echo "No Action yet";
+echo "No Action yet - appointment-history.php:122";
 	 } else {
 
-		echo "Canceled";
+		echo "Canceled - appointment-history.php:125";
 		} ?>
 												</div>
 												<div class="visible-xs visible-sm hidden-md hidden-lg">

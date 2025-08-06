@@ -2,198 +2,182 @@
 session_start();
 error_reporting(0);
 include('include/config.php');
+
 if (strlen($_SESSION['id'] == 0)) {
-	header('location:logout.php');
+    header('location:logout.php');
 } else {
+    if (isset($_GET['del'])) {
+        $uid = $_GET['id'];
+        mysqli_query($con, "DELETE FROM users WHERE id ='$uid'");
+        $_SESSION['msg'] = "تم حذف المستخدم بنجاح!";
+    }
 
-	if (isset($_GET['del'])) {
-		$uid = $_GET['id'];
-		mysqli_query($con, "delete from users where id ='$uid'");
-		$_SESSION['msg'] = "تم حذف البيانات !!";
-	}
+    // PAGINATION
+    $limit = 10; // عدد المستخدمين لكل صفحة
+    $page = isset($_GET['page']) ? max((int)$_GET['page'], 1) : 1;
+    $start = ($page - 1) * $limit;
+
+    $total_query = mysqli_query($con, "SELECT COUNT(*) AS total FROM users");
+    $total_result = mysqli_fetch_assoc($total_query);
+    $total_users = $total_result['total'];
+    $pages = ceil($total_users / $limit);
+
+    $sql = mysqli_query($con, "SELECT * FROM users LIMIT $start, $limit");
 ?>
-	<!DOCTYPE html>
-	<html lang="ar" dir="rtl">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>المسؤول | إدارة المستخدمين</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #f0f5f9;
+            padding-top: 60px;
+        }
+        .main-content { margin-right: 20px; padding: 20px; }
+        .page-header { background: linear-gradient(90deg, #3498db, #4aa8e0); color: white; padding: 25px; border-radius: 10px; margin-bottom: 30px; }
+        .card { border: none; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .card-header { background: white; padding: 15px 20px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        .table-container { overflow-x: auto; }
+        .table { width: 100%; border-collapse: separate; min-width: 800px; }
+        .table th { background-color: #3498db; color: white; font-weight: 600; padding: 15px; text-align: right; }
+        .table td { padding: 12px 15px; border-bottom: 1px solid #eee; text-align: right; }
+        .table tr:nth-child(even) { background-color: #f8fafc; }
+        .action-btn { padding: 6px 12px; border-radius: 5px; margin-left: 5px; font-size: 0.85rem; }
+        .btn-delete { background-color: rgba(231,76,60,0.15); color: #e74c3c; border: 1px solid rgba(231,76,60,0.3); }
+        .btn-delete:hover { background-color: rgba(231,76,60,0.3); }
+        .alert-message { padding: 12px 20px; border-radius: 8px; font-weight: 600; margin-bottom: 20px; background-color: rgba(39,174,96,0.15); color: #27ae60; }
+        .search-container { max-width: 300px; position: relative; }
+        .search-container input { padding-right: 40px; border-radius: 30px; border: 1px solid #ddd; }
+        .search-container i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #6c757d; }
+        .pagination { margin-top: 20px; text-align: center; }
+        .pagination a {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 0 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+            color: #3498db;
+            text-decoration: none;
+        }
+        .pagination a.active {
+            background-color: #3498db;
+            color: #fff;
+        }
+        @media (max-width: 768px) {
+            .card-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .search-container { max-width: 100%; width: 100%; }
+        }
+    </style>
+</head>
+<body>
 
-	<head>
-		<title>المسؤول | إدارة المستخدمين</title>
+<?php include('include/header.php'); ?>
+<?php include('include/sidebar.php'); ?>
 
-		<link href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic" rel="stylesheet" type="text/css" />
-		<link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
-		<link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
-		<link rel="stylesheet" href="vendor/themify-icons/themify-icons.min.css">
-		<link href="vendor/animate.css/animate.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/perfect-scrollbar/perfect-scrollbar.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/switchery/switchery.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-touchspin/jquery.bootstrap-touchspin.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/select2/select2.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-datepicker/bootstrap-datepicker3.standalone.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-timepicker/bootstrap-timepicker.min.css" rel="stylesheet" media="screen">
-		<link rel="stylesheet" href="assets/css/styles.css">
-		<link rel="stylesheet" href="assets/css/plugins.css">
-		<link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
-	</head>
+<div class="main-content">
+    <div class="page-header">
+        <h1><i class="fas fa-users me-3"></i>إدارة المستخدمين</h1>
+        <p>عرض وتعديل وحذف بيانات المستخدمين</p>
+    </div>
 
-	<body>
-		<div id="app">
-			<?php include('include/sidebar.php'); ?>
-			<div class="app-content">
+    <div class="card">
+        <div class="card-header">
+            <span><i class="fas fa-table me-2"></i>قائمة المستخدمين</span>
+            <div class="search-container">
+                <input type="text" class="form-control form-control-sm" placeholder="ابحث عن مستخدم...">
+                <i class="fas fa-search"></i>
+            </div>
+        </div>
+        <div class="card-body">
+            <?php if (isset($_SESSION['msg'])): ?>
+                <div class="alertmessage - manage-users.php:98"><?php echo htmlspecialchars($_SESSION['msg']); ?></div>
+                <?php unset($_SESSION['msg']); ?>
+            <?php endif; ?>
 
-				<?php include('include/header.php'); ?>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>المستخدم</th>
+                            <th>المعلومات</th>
+                            <th>البريد الإلكتروني</th>
+                            <th>تاريخ الإنشاء</th>
+                            <th>تاريخ التحديث</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php
+                        $cnt = $start + 1;
+                        if (mysqli_num_rows($sql) > 0) {
+                            while ($row = mysqli_fetch_array($sql)) {
+                                $firstLetter = mb_substr($row['fullName'], 0, 1, 'UTF-8');
+                        ?>
+                        <tr>
+                            <td><?php echo $cnt; ?></td>
+                            <td><?php echo htmlspecialchars($row['fullName - manage-users.php:124']); ?><br><small><?php echo htmlspecialchars($row['city']); ?></small></td>
+                            <td>
+                                <div><?php echo htmlspecialchars($row['address - manage-users.php:126']); ?></div>
+                                <span class="badge <?php echo ($row['gender'] == 'ذكر') ? 'badgemale' : 'badgefemale'; ?> - manage-users.php:127">
+                                    <?php echo htmlspecialchars($row['gender - manage-users.php:128']); ?>
+                                </span>
+                            </td>
+                            <td><?php echo htmlspecialchars($row['email - manage-users.php:131']); ?></td>
+                            <td><?php echo htmlspecialchars($row['regDate - manage-users.php:132']); ?></td>
+                            <td><?php echo htmlspecialchars($row['updationDate - manage-users.php:133']); ?></td>
+                            <td>
+                                <a href="?id=<?php echo $row['id']; ?>&del=delete - manage-users.php:135" onclick="return confirm('هل أنت متأكد أنك تريد حذف هذا المستخدم؟')" class="action-btn btn-delete">
+                                    <i class="fas fa-trash-alt me-1"></i> حذف
+                                </a>
+                            </td>
+                        </tr>
+                        <?php $cnt++; } } else { ?>
+                        <tr><td colspan="7" class="text-center">لا توجد سجلات.</td></tr>
+                        <?php } ?>
+                    </tbody>
+                </table>
+            </div>
 
-				<!-- end: TOP NAVBAR -->
-				<div class="main-content">
-					<div class="wrap-content container" id="container">
-						<!-- start: PAGE TITLE -->
-						<section id="page-title">
-							<div class="row">
-								<div class="col-sm-8">
-									<h1 class="mainTitle">المسؤول | إدارة المستخدمين</h1>
-								</div>
-								<ol class="breadcrumb">
-									<li>
-										<span>المسؤول</span>
-									</li>
-									<li class="active">
-										<span>إدارة المستخدمين</span>
-									</li>
-								</ol>
-							</div>
-						</section>
-						<!-- end: PAGE TITLE -->
-						<!-- start: BASIC EXAMPLE -->
-						<div class="container-fluid container-fullw bg-white">
+            <!-- PAGINATION -->
+            <div class="pagination">
+                <?php for ($i = 1; $i <= $pages; $i++): ?>
+                    <a href="?page=<?php echo $i; ?> - manage-users.php:150" class="<?php echo ($i == $page) ? 'active' : ''; ?>">
+                        <?php echo $i; ?>
+                    </a>
+                <?php endfor; ?>
+            </div>
+        </div>
+    </div>
+</div>
 
+<?php include('include/setting.php'); ?>
 
-							<div class="row">
-								<div class="col-md-12">
-									<h5 class="over-title margin-bottom-15">إدارة <span class="text-bold">المستخدمين</span></h5>
-									<p style="color:red; - manage-users.php:71"><?php echo htmlentities($_SESSION['msg']); ?>
-										<?php echo htmlentities($_SESSION['msg - manage-users.php:72'] = ""); ?></p>
-									<table class="table table-hover" id="sample-table-1">
-										<thead>
-											<tr>
-												<th class="center">#</th>
-												<th>الاسم الكامل</th>
-												<th class="hidden-xs">العنوان</th>
-												<th>المدينة</th>
-												<th>الجنس </th>
-												<th>البريد الالكتروني </th>
-												<th>تاريخ الإنشاء </th>
-												<th>تاريخ التحديث </th>
-												<th>الإجراء</th>
+<script>
+    // Auto-hide alert after 5 seconds
+    setTimeout(() => {
+        const alert = document.querySelector('.alert-message');
+        if (alert) {
+            alert.style.opacity = '0';
+            setTimeout(() => alert.remove(), 500);
+        }
+    }, 5000);
 
-											</tr>
-										</thead>
-										<tbody>
-											<?php
-											$sql = mysqli_query($con, "select * from users");
-											$cnt = 1;
-											while ($row = mysqli_fetch_array($sql)) {
-											?>
-
-												<tr>
-													<td class="center - manage-users.php:96"><?php echo $cnt; ?>.</td>
-													<td class="hiddenxs - manage-users.php:97"><?php echo $row['fullName']; ?></td>
-													<td><?php echo $row['address - manage-users.php:98']; ?></td>
-													<td><?php echo $row['city - manage-users.php:99']; ?>
-													</td>
-													<td><?php echo $row['gender - manage-users.php:101']; ?></td>
-													<td><?php echo $row['email - manage-users.php:102']; ?></td>
-													<td><?php echo $row['regDate - manage-users.php:103']; ?></td>
-													<td><?php echo $row['updationDate - manage-users.php:104']; ?>
-													</td>
-													<td>
-														<div class="visible-md visible-lg hidden-sm hidden-xs">
-
-
-															<a href="?id=<?php echo $row['id'] ?>&del=delete - manage-users.php:110" onClick="return confirm('هل أنت متأكد أنك تريد الحذف؟')" class="btn btn-transparent btn-xs tooltips" tooltip-placement="top" tooltip="Remove"><i class="fa fa-times fa fa-white"></i></a>
-														</div>
-														<div class="visible-xs visible-sm hidden-md hidden-lg">
-															<div class="btn-group" dropdown is-open="status.isopen">
-																<button type="button" class="btn btn-primary btn-o btn-sm dropdown-toggle" dropdown-toggle>
-																	<i class="fa fa-cog"></i>&nbsp;<span class="caret"></span>
-																</button>
-																<ul class="dropdown-menu pull-right dropdown-light" role="menu">
-																	<li>
-																		<a href="#">
-																			تعديل
-																		</a>
-																	</li>
-																	<li>
-																		<a href="#">
-																			مشاركة
-																		</a>
-																	</li>
-																	<li>
-																		<a href="#">
-																			حذف
-																		</a>
-																	</li>
-																</ul>
-															</div>
-														</div>
-													</td>
-												</tr>
-
-											<?php
-												$cnt = $cnt + 1;
-											} ?>
-
-
-										</tbody>
-									</table>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<!-- end: BASIC EXAMPLE -->
-				<!-- end: SELECT BOXES -->
-
-			</div>
-		</div>
-		</div>
-		<!-- start: FOOTER -->
-		<?php include('include/footer.php'); ?>
-		<!-- end: FOOTER -->
-
-		<!-- start: SETTINGS -->
-		<?php include('include/setting.php'); ?>
-
-		<!-- end: SETTINGS -->
-		</div>
-		<!-- start: MAIN JAVASCRIPTS -->
-		<script src="vendor/jquery/jquery.min.js"></script>
-		<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-		<script src="vendor/modernizr/modernizr.js"></script>
-		<script src="vendor/jquery-cookie/jquery.cookie.js"></script>
-		<script src="vendor/perfect-scrollbar/perfect-scrollbar.min.js"></script>
-		<script src="vendor/switchery/switchery.min.js"></script>
-		<!-- end: MAIN JAVASCRIPTS -->
-		<!-- start: JAVASCRIPTS REQUIRED FOR THIS PAGE ONLY -->
-		<script src="vendor/maskedinput/jquery.maskedinput.min.js"></script>
-		<script src="vendor/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js"></script>
-		<script src="vendor/autosize/autosize.min.js"></script>
-		<script src="vendor/selectFx/classie.js"></script>
-		<script src="vendor/selectFx/selectFx.js"></script>
-		<script src="vendor/select2/select2.min.js"></script>
-		<script src="vendor/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
-		<script src="vendor/bootstrap-timepicker/bootstrap-timepicker.min.js"></script>
-		<!-- end: JAVASCRIPTS REQUIRED FOR THIS PAGE ONLY -->
-		<!-- start: CLIP-TWO JAVASCRIPTS -->
-		<script src="assets/js/main.js"></script>
-		<!-- start: JavaScript Event Handlers for this page -->
-		<script src="assets/js/form-elements.js"></script>
-		<script>
-			jQuery(document).ready(function() {
-				Main.init();
-				FormElements.init();
-			});
-		</script>
-		<!-- end: JavaScript Event Handlers for this page -->
-		<!-- end: CLIP-TWO JAVASCRIPTS -->
-	</body>
-
-	</html>
+    // Search functionality
+    document.querySelector('.search-container input').addEventListener('input', function () {
+        const searchTerm = this.value.toLowerCase();
+        const rows = document.querySelectorAll('.table tbody tr');
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    });
+</script>
+</body>
+</html>
 <?php } ?>

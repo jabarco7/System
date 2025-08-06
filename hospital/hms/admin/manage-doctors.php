@@ -65,42 +65,9 @@ $sql = mysqli_query($con, "SELECT * FROM doctors ORDER BY id DESC LIMIT $records
             padding-top: 60px;
         }
         
-        .sidebar {
-            background: linear-gradient(180deg, var(--secondary) 0%, #1a2530 100%);
-            color: white;
-            position: fixed;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            width: 250px;
-            padding-top: 20px;
-            box-shadow: 3px 0 15px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-        }
-        
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.85);
-            padding: 12px 20px;
-            margin: 5px 15px;
-            border-radius: 5px;
-            transition: all 0.3s;
-        }
-        
-        .sidebar .nav-link:hover, 
-        .sidebar .nav-link.active {
-            background-color: var(--primary);
-            color: white;
-        }
-        
-        .sidebar .nav-link i {
-            width: 25px;
-            text-align: center;
-            margin-left: 10px;
-        }
-        
         .main-content {
-            margin-right: 250px;
-            padding: 20px;
+            margin-right: 20px;
+            margin-top: 35px;
         }
         
         .navbar {
@@ -418,43 +385,9 @@ $sql = mysqli_query($con, "SELECT * FROM doctors ORDER BY id DESC LIMIT $records
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="text-center mb-4">
-            <h4 class="text-white">نظام المستشفى</h4>
-            <hr class="bg-light">
-        </div>
-        <nav class="nav flex-column">
-            <a class="nav-link" href="dashboard.php"><i class="fas fa-home"></i> <span>لوحة التحكم</span></a>
-            <a class="nav-link active" href="manage-doctors.php"><i class="fas fa-user-md"></i> <span>إدارة الأطباء</span></a>
-            <a class="nav-link" href="manage-patients.php"><i class="fas fa-user-injured"></i> <span>إدارة المرضى</span></a>
-            <a class="nav-link" href="doctor-logs.php"><i class="fas fa-history"></i> <span>سجلات الجلسات</span></a>
-            <a class="nav-link" href="appointments.php"><i class="fas fa-calendar-check"></i> <span>المواعيد</span></a>
-            <a class="nav-link" href="reports.php"><i class="fas fa-chart-bar"></i> <span>التقارير</span></a>
-            <a class="nav-link" href="settings.php"><i class="fas fa-cog"></i> <span>الإعدادات</span></a>
-        </nav>
-    </div>
-    
     <!-- Top Navigation -->
-    <nav class="navbar navbar-expand">
-        <div class="container-fluid">
-            <div class="d-flex align-items-center">
-                <h5 class="mb-0">لوحة تحكم المسؤول</h5>
-            </div>
-            
-            <div class="d-flex align-items-center">
-                <div class="dropdown">
-                    <a href="#" class="dropdown-toggle d-flex align-items-center text-dark text-decoration-none" id="userDropdown" data-bs-toggle="dropdown">
-                        <img src="https://ui-avatars.com/api/?name=المسؤول&background=3498db&color=fff" class="rounded-circle me-2" width="35" height="35">
-                        <span class="d-none d-md-inline">المسؤول</span>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-end">
-                        <a class="dropdown-item" href="logout.php"><i class="fas fa-sign-out-alt me-2"></i> تسجيل الخروج</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <?php include('include/header.php'); ?>
+    <?php include('include/sidebar.php'); ?>
     
     <!-- Main Content -->
     <div class="main-content">
@@ -472,12 +405,11 @@ $sql = mysqli_query($con, "SELECT * FROM doctors ORDER BY id DESC LIMIT $records
         <!-- Stats Cards -->
         <div class="stats-container">
             <?php
-            // إحصائيات حقيقية - تم إزالة الإشارة إلى عمود status غير الموجود
+            // إحصائيات حقيقية
             $total_query = mysqli_query($con, "SELECT COUNT(*) as total FROM doctors");
             $total_result = mysqli_fetch_assoc($total_query);
             $total_count = $total_result['total'];
             
-            // تم إزالة الاستعلام الذي يستخدم status
             $specialties_query = mysqli_query($con, "SELECT COUNT(DISTINCT specilization) as total FROM doctors");
             $specialties_result = mysqli_fetch_assoc($specialties_query);
             $specialties_count = $specialties_result['total'];
@@ -486,7 +418,6 @@ $sql = mysqli_query($con, "SELECT * FROM doctors ORDER BY id DESC LIMIT $records
             $recent_result = mysqli_fetch_assoc($recent_query);
             $recent_count = $recent_result['total'];
             
-            // إحصائية جديدة لا تعتمد على status
             $top_specialty_query = mysqli_query($con, "SELECT specilization, COUNT(*) as count FROM doctors GROUP BY specilization ORDER BY count DESC LIMIT 1");
             $top_specialty_result = mysqli_fetch_assoc($top_specialty_query);
             $top_specialty = $top_specialty_result['specilization'] ?? 'لا يوجد';
@@ -524,9 +455,9 @@ $sql = mysqli_query($con, "SELECT * FROM doctors ORDER BY id DESC LIMIT $records
             </div>
             <div class="card-body">
                 <?php if (isset($_SESSION['msg'])): ?>
-                    <div class="alertmessage <?php echo strpos($_SESSION['msg'], 'خطأ') !== false ? 'alerterror' : 'alertsuccess'; ?> - manage-doctors.php:527">
-                        <i class="fas <?php echo strpos($_SESSION['msg'], 'خطأ') !== false ? 'faexclamationcircle' : 'facheckcircle'; ?> me2 - manage-doctors.php:528"></i>
-                        <?php echo htmlspecialchars($_SESSION['msg - manage-doctors.php:529']); ?>
+                    <div class="alertmessage <?php echo strpos($_SESSION['msg'], 'خطأ') !== false ? 'alerterror' : 'alertsuccess'; ?> - manage-doctors.php:458">
+                        <i class="fas <?php echo strpos($_SESSION['msg'], 'خطأ') !== false ? 'faexclamationcircle' : 'facheckcircle'; ?> me2 - manage-doctors.php:459"></i>
+                        <?php echo htmlspecialchars($_SESSION['msg - manage-doctors.php:460']); ?>
                     </div>
                     <?php unset($_SESSION['msg']); ?>
                 <?php endif; ?>
@@ -548,21 +479,20 @@ $sql = mysqli_query($con, "SELECT * FROM doctors ORDER BY id DESC LIMIT $records
                             if ($sql && mysqli_num_rows($sql) > 0) {
                                 while ($row = mysqli_fetch_assoc($sql)) {
                                     $has_records = true;
-                                    // التأكد من استخدام أسماء الحقول الصحيحة
                                     $specilization = isset($row['specilization']) ? $row['specilization'] : 'غير محدد';
                                     $doctorName = isset($row['doctorName']) ? $row['doctorName'] : 'غير معروف';
                                     $creationDate = isset($row['creationDate']) ? $row['creationDate'] : 'غير محدد';
                             ?>
                                     <tr>
-                                        <td class="textcenter - manage-doctors.php:557"><?php echo $cnt; ?></td>
+                                        <td class="textcenter - manage-doctors.php:487"><?php echo $cnt; ?></td>
                                         <td><?php echo htmlspecialchars($specilization); ?></td>
                                         <td><?php echo htmlspecialchars($doctorName); ?></td>
                                         <td><?php echo htmlspecialchars($creationDate); ?></td>
                                         <td class="text-center">
-                                            <a href="editdoctor.php?id=<?php echo $row['id']; ?> - manage-doctors.php:562" class="action-btn btn-edit">
+                                            <a href="editdoctor.php?id=<?php echo $row['id']; ?> - manage-doctors.php:492" class="action-btn btn-edit">
                                                 <i class="fas fa-edit me-1"></i>تعديل
                                             </a>
-                                            <a href="?del=1&id=<?php echo $row['id']; ?> - manage-doctors.php:565" 
+                                            <a href="?del=1&id=<?php echo $row['id']; ?> - manage-doctors.php:495"
                                                onclick="return confirm('هل أنت متأكد أنك تريد حذف هذا الطبيب؟')" 
                                                class="action-btn btn-delete">
                                                 <i class="fas fa-trash-alt me-1"></i>حذف
@@ -573,7 +503,7 @@ $sql = mysqli_query($con, "SELECT * FROM doctors ORDER BY id DESC LIMIT $records
                                     $cnt++;
                                 }
                             } else {
-                                echo '<tr><td colspan="5 - manage-doctors.php:576" class="text-center py-5">
+                                echo '<tr><td colspan="5 - manage-doctors.php:506" class="text-center py-5">
                                     <div class="no-records">
                                         <i class="fas fa-user-md-slash"></i>
                                         <h4>لا توجد سجلات متاحة</h4>
@@ -593,12 +523,11 @@ $sql = mysqli_query($con, "SELECT * FROM doctors ORDER BY id DESC LIMIT $records
                         عرض <?php echo min($cnt - 1, $records_per_page); ?> من أصل <?php echo $total_records; ?> طبيب
                     </div>
                     
-                   
                     <nav>
                         <ul class="pagination">
                             <?php if ($page > 1): ?>
                                 <li class="page-item">
-                                    <a class="pagelink - manage-doctors.php:601" href="manage-doctors.php?page=<?php echo $page - 1; ?>" aria-label="السابق">
+                                    <a class="pagelink - manage-doctors.php:530" href="manage-doctors.php?page=<?php echo $page - 1; ?>" aria-label="السابق">
                                         <span aria-hidden="true">&laquo;</span>
                                     </a>
                                 </li>
@@ -609,28 +538,28 @@ $sql = mysqli_query($con, "SELECT * FROM doctors ORDER BY id DESC LIMIT $records
                             $end = min($total_pages, $page + 2);
                             
                             if ($start > 1) {
-                                echo '<li class="pageitem"><a class="pagelink" href="?page=1">1</a></li> - manage-doctors.php:612';
+                                echo '<li class="pageitem"><a class="pagelink" href="?page=1">1</a></li> - manage-doctors.php:541';
                                 if ($start > 2) {
-                                    echo '<li class="pageitem disabled"><span class="pagelink">...</span></li> - manage-doctors.php:614';
+                                    echo '<li class="pageitem disabled"><span class="pagelink">...</span></li> - manage-doctors.php:543';
                                 }
                             }
                             
                             for ($i = $start; $i <= $end; $i++) {
                                 $active = ($i == $page) ? 'active' : '';
-                                echo '<li class="pageitem - manage-doctors.php:620' . $active . '"><a class="page-link" href="manage-doctors.php?page=' . $i . '">' . $i . '</a></li>';
+                                echo '<li class="pageitem - manage-doctors.php:549' . $active . '"><a class="page-link" href="manage-doctors.php?page=' . $i . '">' . $i . '</a></li>';
                             }
                             
                             if ($end < $total_pages) {
                                 if ($end < $total_pages - 1) {
-                                    echo '<li class="pageitem disabled"><span class="pagelink">...</span></li> - manage-doctors.php:625';
+                                    echo '<li class="pageitem disabled"><span class="pagelink">...</span></li> - manage-doctors.php:554';
                                 }
-                                echo '<li class="pageitem"><a class="pagelink" href="?page= - manage-doctors.php:627' . $total_pages . '">' . $total_pages . '</a></li>';
+                                echo '<li class="pageitem"><a class="pagelink" href="?page= - manage-doctors.php:556' . $total_pages . '">' . $total_pages . '</a></li>';
                             }
                             ?>
                             
                             <?php if ($page < $total_pages): ?>
                                 <li class="page-item">
-                                    <a class="pagelink - manage-doctors.php:633" href="manage-doctors.php?page=<?php echo $page + 1; ?>" aria-label="التالي">
+                                    <a class="pagelink - manage-doctors.php:562" href="manage-doctors.php?page=<?php echo $page + 1; ?>" aria-label="التالي">
                                         <span aria-hidden="true">&raquo;</span>
                                     </a>
                                 </li>
@@ -642,6 +571,8 @@ $sql = mysqli_query($con, "SELECT * FROM doctors ORDER BY id DESC LIMIT $records
             </div>
         </div>
     </div>
+    	<?php include('include/setting.php');?>
+
     
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -657,7 +588,7 @@ $sql = mysqli_query($con, "SELECT * FROM doctors ORDER BY id DESC LIMIT $records
                 const td = tr[i].getElementsByTagName('td');
                 let show = false;
                 
-                for (let j = 1; j < 3; j++) { // البحث في التخصص واسم الطبيب فقط
+                for (let j = 1; j < 3; j++) {
                     if (td[j]) {
                         const txtValue = td[j].textContent || td[j].innerText;
                         if (txtValue.toUpperCase().indexOf(filter) > -1) {
