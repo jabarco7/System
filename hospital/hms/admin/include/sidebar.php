@@ -26,7 +26,7 @@
       right: 0 !important;
       left: auto !important;
       width: 280px;
-      height: calc(100vh - 52px);
+      height: calc(100vh - 15px);
       background-color: #1a2530 !important;
       color: white;
       overflow-y: auto;

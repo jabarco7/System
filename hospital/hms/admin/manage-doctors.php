@@ -1,622 +1,216 @@
 <?php
 session_start();
 include('include/config.php');
-if (strlen($_SESSION['id']) == 0) {
-    header('location:logout.php');
-    exit();
+
+if (empty($_SESSION['id'])) {
+    header('location:logout.php'); exit();
 }
 
-// Handle doctor deletion
-if(isset($_GET['del'])) {
-    $docid = intval($_GET['id']);
-    $delete_query = mysqli_query($con, "DELETE FROM doctors WHERE id = '$docid'");
-    if($delete_query) {
-        $_SESSION['msg'] = "تم حذف الطبيب بنجاح!";
-    } else {
-        $_SESSION['msg'] = "خطأ في حذف الطبيب: " . mysqli_error($con);
+/* CSRF token */
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$CSRF = $_SESSION['csrf_token'];
+
+/* حذف طبيب عبر POST + CSRF */
+if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['action']) && $_POST['action']==='delete') {
+    if (!hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) {
+        $_SESSION['msg'] = 'خطأ في التحقق الأمني (CSRF). أعد المحاولة.'; header('location: manage-doctors.php'); exit();
     }
-    header('location:manage-doctors.php');
-    exit();
+    $docid = (int)($_POST['id'] ?? 0);
+    $stmt = $con->prepare("DELETE FROM doctors WHERE id = ?");
+    $stmt->bind_param("i", $docid);
+    if ($stmt->execute()) $_SESSION['msg'] = "تم حذف الطبيب بنجاح!";
+    else $_SESSION['msg'] = "خطأ في حذف الطبيب: ".$con->error;
+    $stmt->close();
+    header('location: manage-doctors.php'); exit();
 }
 
-// Pagination variables
-$records_per_page = 5;
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$page = max($page, 1);
-$offset = ($page - 1) * $records_per_page;
+/* فلاتر البحث */
+$q_name   = trim($_GET['name']  ?? '');
+$q_email  = trim($_GET['email'] ?? '');
+$q_spec   = trim($_GET['spec']  ?? '');
+function clean_spec($s){ $s=preg_replace('/\badd-doctor\.php:\d+\s*/i','',(string)$s); return trim($s," -\t\n\r\0\x0B"); }
 
-// Get total number of doctors
-$total_records_query = mysqli_query($con, "SELECT COUNT(*) as total FROM doctors");
-if(!$total_records_query) {
-    die("خطأ في جلب البيانات: " . mysqli_error($con));
+/* بناء شرط البحث */
+$where = [];
+$params = [];
+$types  = '';
+
+if ($q_name !== '') { $where[] = "doctorName LIKE ?"; $params[] = "%$q_name%"; $types.='s'; }
+if ($q_email!== '') { $where[] = "docEmail  LIKE ?";  $params[] = "%$q_email%";$types.='s'; }
+if ($q_spec !== '') { $where[] = "specilization = ?"; $params[] = $q_spec;     $types.='s'; }
+
+$where_sql = $where ? ('WHERE '.implode(' AND ',$where)) : '';
+
+/* تعداد السجلات للصفحة */
+$sql_total = "SELECT COUNT(*) AS total FROM doctors $where_sql";
+$stmt = $con->prepare($sql_total);
+if ($where) { $stmt->bind_param($types, ...$params); }
+$stmt->execute(); $res = $stmt->get_result();
+$total_records = (int)($res->fetch_assoc()['total'] ?? 0);
+$stmt->close();
+
+/* ترقيم الصفحات */
+$per_page = 5;
+$page = max((int)($_GET['page'] ?? 1), 1);
+$offset = ($page-1)*$per_page;
+$total_pages = max((int)ceil($total_records/$per_page), 1);
+
+/* جلب السجلات */
+$sql_list = "SELECT * FROM doctors $where_sql ORDER BY id DESC LIMIT ? OFFSET ?";
+$stmt = $con->prepare($sql_list);
+if ($where) {
+    $bindTypes = $types.'ii'; $params2 = array_merge($params, [ $per_page, $offset ]);
+    $stmt->bind_param($bindTypes, ...$params2);
+} else {
+    $stmt->bind_param('ii', $per_page, $offset);
 }
-$total_records_result = mysqli_fetch_assoc($total_records_query);
-$total_records = $total_records_result['total'];
-$total_pages = ceil($total_records / $records_per_page);
+$stmt->execute(); $rows = $stmt->get_result();
+$cnt = $offset+1;
 
-// Fetch doctors for current page
-$cnt = ($page - 1) * $records_per_page + 1;
-$sql = mysqli_query($con, "SELECT * FROM doctors ORDER BY id DESC LIMIT $records_per_page OFFSET $offset");
+/* قائمة التخصصات للفلاتر */
+$specs = [];
+$rsp = mysqli_query($con, "SELECT specilization FROM doctorspecilization ORDER BY specilization ASC");
+while($r = mysqli_fetch_assoc($rsp)){ $specs[] = $r['specilization']; }
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم | إدارة الأطباء</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>إدارة الأطباء</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --primary: #3498db;
-            --secondary: #2c3e50;
-            --success: #27ae60;
-            --danger: #e74c3c;
-            --light: #f8f9fa;
-            --dark: #343a40;
-            --gray: #6c757d;
-        }
-        
-        body {
-            font-family: 'Tajawal', sans-serif;
-            background-color: #f0f5f9;
-            color: #333;
-            padding-top: 60px;
-        }
-        
-        .main-content {
-            margin-right: 20px;
-            margin-top: 35px;
-        }
-        
-        .navbar {
-            background: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 250px;
-            z-index: 999;
-            height: 60px;
-        }
-        
-        .page-header {
-            background: linear-gradient(90deg, var(--primary), #4aa8e0);
-            color: white;
-            padding: 25px 30px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-        }
-        
-        .page-header h1 {
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-        
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .stat-card i {
-            font-size: 2.5rem;
-            background: linear-gradient(135deg, var(--primary), #4aa8e0);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            margin-bottom: 15px;
-        }
-        
-        .stat-card h3 {
-            font-weight: 700;
-            color: var(--secondary);
-            margin-bottom: 5px;
-            font-size: 1.8rem;
-        }
-        
-        .stat-card p {
-            color: var(--gray);
-            margin-bottom: 0;
-            font-size: 1.05rem;
-        }
-        
-        .card {
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            margin-bottom: 25px;
-        }
-        
-        .card-header {
-            background-color: white;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            padding: 15px 20px;
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-        
-        .table-container {
-            overflow-x: auto;
-        }
-        
-        .table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-        
-        .table th {
-            background-color: var(--primary);
-            color: white;
-            font-weight: 600;
-            padding: 15px;
-        }
-        
-        .table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-        
-        .table tr:nth-child(even) {
-            background-color: #f8fafc;
-        }
-        
-        .table tr:hover {
-            background-color: rgba(52, 152, 219, 0.05);
-        }
-        
-        .action-btn {
-            padding: 6px 12px;
-            border-radius: 5px;
-            margin-left: 5px;
-            font-size: 0.85rem;
-            transition: all 0.3s;
-        }
-        
-        .btn-edit {
-            background-color: rgba(39, 174, 96, 0.15);
-            color: var(--success);
-            border: 1px solid rgba(39, 174, 96, 0.3);
-        }
-        
-        .btn-edit:hover {
-            background-color: rgba(39, 174, 96, 0.3);
-        }
-        
-        .btn-delete {
-            background-color: rgba(231, 76, 60, 0.15);
-            color: var(--danger);
-            border: 1px solid rgba(231, 76, 60, 0.3);
-        }
-        
-        .btn-delete:hover {
-            background-color: rgba(231, 76, 60, 0.3);
-        }
-        
-        .add-btn {
-            background: linear-gradient(90deg, var(--success), #2ecc71);
-            color: white;
-            padding: 8px 20px;
-            border-radius: 30px;
-            font-weight: 600;
-            border: none;
-            transition: all 0.3s;
-        }
-        
-        .add-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
-        }
-        
-        .alert-message {
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            animation: fadeIn 0.5s;
-            display: flex;
-            align-items: center;
-        }
-        
-        .alert-success {
-            background-color: rgba(39, 174, 96, 0.15);
-            color: var(--success);
-            border-left: 4px solid var(--success);
-        }
-        
-        .alert-error {
-            background-color: rgba(231, 76, 60, 0.15);
-            color: var(--danger);
-            border-left: 4px solid var(--danger);
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .pagination-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 30px;
-            flex-wrap: wrap;
-            background-color: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-        }
-        
-        .pagination {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            direction: rtl;
-            margin: 0;
-            padding: 0;
-        }
-        
-        .page-item {
-            margin: 3px;
-        }
-        
-        .page-item .page-link {
-            color: var(--primary);
-            border: 1px solid #dee2e6;
-            border-radius: 50px;
-            padding: 8px 16px;
-            background-color: #fff;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            min-width: 40px;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .page-item.active .page-link {
-            background: linear-gradient(90deg, var(--primary), #4aa8e0);
-            border-color: var(--primary);
-            color: #fff;
-            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
-        }
-        
-        .page-item.disabled .page-link {
-            background-color: #f1f1f1;
-            color: #ccc;
-            cursor: not-allowed;
-            border-color: #e0e0e0;
-        }
-        
-        .page-item .page-link:hover:not(.active):not(.disabled) {
-            background-color: rgba(52, 152, 219, 0.1);
-            color: var(--primary);
-            transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-        }
-        
-        .page-info {
-            padding: 8px 15px;
-            font-weight: 600;
-            color: var(--secondary);
-        }
-        
-        .page-jump {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .page-jump select {
-            padding: 8px 15px;
-            border-radius: 25px;
-            border: 1px solid #ccc;
-            font-weight: 600;
-            color: var(--primary);
-            background-color: #fff;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .page-jump select:hover {
-            border-color: var(--primary);
-            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
-        }
-        
-        .no-records {
-            text-align: center;
-            padding: 40px;
-            color: var(--gray);
-        }
-        
-        .no-records i {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            color: #d1d8e0;
-        }
-        
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 0;
-                padding: 0;
-            }
-            
-            .main-content {
-                margin-right: 0;
-            }
-            
-            .navbar {
-                right: 0;
-            }
-            
-            .pagination-container {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .stats-container {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            }
-            
-            .action-btn {
-                margin-bottom: 5px;
-                display: block;
-                width: 100%;
-                text-align: center;
-            }
-        }
+        body{font-family:'Tajawal',sans-serif;background:#f0f5f9;padding-top:40px}
+        .page-header{background:linear-gradient(90deg,#3498db,#4aa8e0);color:#fff;padding:25px 30px;border-radius:10px;margin-bottom:20px}
+        .table th{background:#3498db;color:#fff;font-weight:600}
+        .action-btn{padding:6px 12px;border-radius:6px;font-size:.85rem}
+        .btn-delete{background:rgba(231,76,60,.12);color:#e74c3c;border:1px solid rgba(231,76,60,.3)}
+        .btn-delete:hover{background:rgba(231,76,60,.2)}
+        .badge-spec{background:rgba(52,152,219,.12);color:#3498db;border:1px solid rgba(52,152,219,.25);font-weight:600}
+        .filter-card{background:#fff;border-radius:10px;padding:15px 15px;box-shadow:0 5px 15px rgba(0,0,0,.05);margin-bottom:15px}
+        .pagination .page-link{color:#3498db}
+        .pagination .page-item.active .page-link{background:#3498db;border-color:#3498db}
+        .main-content{margin-right:20px;padding:20px}
     </style>
 </head>
 <body>
-    <!-- Top Navigation -->
+        <?php include('include/sidebar.php'); ?>
     <?php include('include/header.php'); ?>
-    <?php include('include/sidebar.php'); ?>
-    
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="page-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1><i class="fas fa-user-md me-3"></i>إدارة الأطباء</h1>
-                </div>
-                <a href="add-doctor.php" class="add-btn">
-                    <i class="fas fa-plus-circle me-2"></i>إضافة طبيب جديد
-                </a>
-            </div>
-        </div>
-        
-        <!-- Stats Cards -->
-        <div class="stats-container">
-            <?php
-            // إحصائيات حقيقية
-            $total_query = mysqli_query($con, "SELECT COUNT(*) as total FROM doctors");
-            $total_result = mysqli_fetch_assoc($total_query);
-            $total_count = $total_result['total'];
-            
-            $specialties_query = mysqli_query($con, "SELECT COUNT(DISTINCT specilization) as total FROM doctors");
-            $specialties_result = mysqli_fetch_assoc($specialties_query);
-            $specialties_count = $specialties_result['total'];
-            
-            $recent_query = mysqli_query($con, "SELECT COUNT(*) as total FROM doctors WHERE creationDate >= NOW() - INTERVAL 7 DAY");
-            $recent_result = mysqli_fetch_assoc($recent_query);
-            $recent_count = $recent_result['total'];
-            
-            $top_specialty_query = mysqli_query($con, "SELECT specilization, COUNT(*) as count FROM doctors GROUP BY specilization ORDER BY count DESC LIMIT 1");
-            $top_specialty_result = mysqli_fetch_assoc($top_specialty_query);
-            $top_specialty = $top_specialty_result['specilization'] ?? 'لا يوجد';
-            ?>
-            <div class="stat-card">
-                <i class="fas fa-user-md"></i>
-                <h3><?php echo $total_count; ?></h3>
-                <p>إجمالي الأطباء</p>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-stethoscope"></i>
-                <h3><?php echo $specialties_count; ?></h3>
-                <p>تخصصات طبية</p>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-clock"></i>
-                <h3><?php echo $recent_count; ?></h3>
-                <p>أطباء جدد هذا الأسبوع</p>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-star"></i>
-                <h3><?php echo $top_specialty; ?></h3>
-                <p>التخصص الأكثر توفراً</p>
-            </div>
-        </div>
-        
-        <!-- Doctors Table -->
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-table me-2"></i>قائمة الأطباء</span>
-                <div class="d-flex">
-                    <input type="text" class="form-control form-control-sm me-2" placeholder="بحث بالاسم أو التخصص..." id="searchInput">
-                    <button class="btn btn-sm btn-primary" onclick="filterTable()"><i class="fas fa-search me-1"></i> بحث</button>
-                </div>
-            </div>
-            <div class="card-body">
-                <?php if (isset($_SESSION['msg'])): ?>
-                    <div class="alertmessage <?php echo strpos($_SESSION['msg'], 'خطأ') !== false ? 'alerterror' : 'alertsuccess'; ?> - manage-doctors.php:458">
-                        <i class="fas <?php echo strpos($_SESSION['msg'], 'خطأ') !== false ? 'faexclamationcircle' : 'facheckcircle'; ?> me2 - manage-doctors.php:459"></i>
-                        <?php echo htmlspecialchars($_SESSION['msg - manage-doctors.php:460']); ?>
-                    </div>
-                    <?php unset($_SESSION['msg']); ?>
-                <?php endif; ?>
-                
-                <div class="table-container">
-                    <table class="table" id="doctorsTable">
-                        <thead>
-                            <tr>
-                                <th class="text-center">#</th>
-                                <th>التخصص</th>
-                                <th>اسم الطبيب</th>
-                                <th>تاريخ الإنشاء</th>
-                                <th class="text-center">الإجراءات</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            $has_records = false;
-                            if ($sql && mysqli_num_rows($sql) > 0) {
-                                while ($row = mysqli_fetch_assoc($sql)) {
-                                    $has_records = true;
-                                    $specilization = isset($row['specilization']) ? $row['specilization'] : 'غير محدد';
-                                    $doctorName = isset($row['doctorName']) ? $row['doctorName'] : 'غير معروف';
-                                    $creationDate = isset($row['creationDate']) ? $row['creationDate'] : 'غير محدد';
-                            ?>
-                                    <tr>
-                                        <td class="textcenter - manage-doctors.php:487"><?php echo $cnt; ?></td>
-                                        <td><?php echo htmlspecialchars($specilization); ?></td>
-                                        <td><?php echo htmlspecialchars($doctorName); ?></td>
-                                        <td><?php echo htmlspecialchars($creationDate); ?></td>
-                                        <td class="text-center">
-                                            <a href="editdoctor.php?id=<?php echo $row['id']; ?> - manage-doctors.php:492" class="action-btn btn-edit">
-                                                <i class="fas fa-edit me-1"></i>تعديل
-                                            </a>
-                                            <a href="?del=1&id=<?php echo $row['id']; ?> - manage-doctors.php:495"
-                                               onclick="return confirm('هل أنت متأكد أنك تريد حذف هذا الطبيب؟')" 
-                                               class="action-btn btn-delete">
-                                                <i class="fas fa-trash-alt me-1"></i>حذف
-                                            </a>
-                                        </td>
-                                    </tr>
-                            <?php
-                                    $cnt++;
-                                }
-                            } else {
-                                echo '<tr><td colspan="5 - manage-doctors.php:506" class="text-center py-5">
-                                    <div class="no-records">
-                                        <i class="fas fa-user-md-slash"></i>
-                                        <h4>لا توجد سجلات متاحة</h4>
-                                        <p class="text-muted">لم يتم إضافة أي أطباء حتى الآن</p>
-                                    </div>
-                                </td></tr>';
-                            }
-                            ?>
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- Pagination -->
-                <?php if ($total_pages > 1): ?>
-                <div class="pagination-container">
-                    <div class="page-info">
-                        عرض <?php echo min($cnt - 1, $records_per_page); ?> من أصل <?php echo $total_records; ?> طبيب
-                    </div>
-                    
-                    <nav>
-                        <ul class="pagination">
-                            <?php if ($page > 1): ?>
-                                <li class="page-item">
-                                    <a class="pagelink - manage-doctors.php:530" href="manage-doctors.php?page=<?php echo $page - 1; ?>" aria-label="السابق">
-                                        <span aria-hidden="true">&laquo;</span>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                            
-                            <?php 
-                            $start = max(1, $page - 2);
-                            $end = min($total_pages, $page + 2);
-                            
-                            if ($start > 1) {
-                                echo '<li class="pageitem"><a class="pagelink" href="?page=1">1</a></li> - manage-doctors.php:541';
-                                if ($start > 2) {
-                                    echo '<li class="pageitem disabled"><span class="pagelink">...</span></li> - manage-doctors.php:543';
-                                }
-                            }
-                            
-                            for ($i = $start; $i <= $end; $i++) {
-                                $active = ($i == $page) ? 'active' : '';
-                                echo '<li class="pageitem - manage-doctors.php:549' . $active . '"><a class="page-link" href="manage-doctors.php?page=' . $i . '">' . $i . '</a></li>';
-                            }
-                            
-                            if ($end < $total_pages) {
-                                if ($end < $total_pages - 1) {
-                                    echo '<li class="pageitem disabled"><span class="pagelink">...</span></li> - manage-doctors.php:554';
-                                }
-                                echo '<li class="pageitem"><a class="pagelink" href="?page= - manage-doctors.php:556' . $total_pages . '">' . $total_pages . '</a></li>';
-                            }
-                            ?>
-                            
-                            <?php if ($page < $total_pages): ?>
-                                <li class="page-item">
-                                    <a class="pagelink - manage-doctors.php:562" href="manage-doctors.php?page=<?php echo $page + 1; ?>" aria-label="التالي">
-                                        <span aria-hidden="true">&raquo;</span>
-                                    </a>
-                                </li>
-                            <?php endif; ?>
-                        </ul>
-                    </nav>
-                </div>
-                <?php endif; ?>
-            </div>
-        </div>
+<div class="main-content">
+<div class="container ">
+    <div class="page-header text-center">
+        <h2><i class="fas fa-user-md me-2"></i>إدارة الأطباء</h2>
     </div>
-    	<?php include('include/setting.php');?>
 
-    
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // وظيفة تصفية الجدول
-        function filterTable() {
-            const input = document.getElementById('searchInput');
-            const filter = input.value.toUpperCase();
-            const table = document.getElementById('doctorsTable');
-            const tr = table.getElementsByTagName('tr');
-            
-            for (let i = 1; i < tr.length; i++) {
-                const td = tr[i].getElementsByTagName('td');
-                let show = false;
-                
-                for (let j = 1; j < 3; j++) {
-                    if (td[j]) {
-                        const txtValue = td[j].textContent || td[j].innerText;
-                        if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                            show = true;
-                            break;
-                        }
-                    }
-                }
-                
-                tr[i].style.display = show ? '' : 'none';
-            }
-        }
-        
-        // تفعيل البحث عند الضغط على Enter
-        document.getElementById('searchInput').addEventListener('keyup', function(event) {
-            if (event.key === 'Enter') {
-                filterTable();
-            }
-        });
-        
-        // إخفاء رسالة التنبيه بعد 5 ثوانٍ
-        setTimeout(() => {
-            const alert = document.querySelector('.alert-message');
-            if (alert) {
-                alert.style.opacity = '0';
-                setTimeout(() => alert.remove(), 500);
-            }
-        }, 5000);
-    </script>
+    <?php if (!empty($_SESSION['msg'])): ?>
+        <?php $isErr = (stripos($_SESSION['msg'], 'خطأ') !== false); ?>
+        <div class="alert <?='alert-'.($isErr?'danger':'success')?> text-center">
+            <?= htmlspecialchars($_SESSION['msg']); ?>
+        </div>
+        <?php unset($_SESSION['msg']); ?>
+    <?php endif; ?>
+
+    <!-- فلاتر البحث -->
+    <div class="filter-card">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">الاسم</label>
+                <input type="text" name="name" value="<?= htmlspecialchars($q_name) ?>" class="form-control" placeholder="ابحث بالاسم">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">الإيميل</label>
+                <input type="text" name="email" value="<?= htmlspecialchars($q_email) ?>" class="form-control" placeholder="ابحث بالإيميل">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">التخصص</label>
+                <select name="spec" class="form-select">
+                    <option value="">الكل</option>
+                    <?php foreach($specs as $s): ?>
+                        <option value="<?= htmlspecialchars($s) ?>" <?= $q_spec===$s?'selected':'' ?>>
+                            <?= htmlspecialchars($s) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-1 d-grid">
+                <button class="btn btn-primary"><i class="fas fa-search"></i></button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered align-middle">
+            <thead>
+            <tr>
+                <th class="text-center" style="width:70px">#</th>
+                <th>رقم الطبيب</th>
+                <th>الإيميل</th>
+                <th>التخصص</th>
+                <th>اسم الطبيب</th>
+                <th>تاريخ الإنشاء</th>
+                <th class="text-center" style="width:120px">الإجراءات</th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php if ($rows && $rows->num_rows>0): ?>
+                <?php while ($row = $rows->fetch_assoc()): ?>
+                    <?php
+                    $spec = clean_spec($row['specilization'] ?? 'غير محدد');
+                    $name = $row['doctorName'] ?? 'غير معروف';
+                    $email= $row['docEmail'] ?? 'غير متوفر';
+                    $contact = $row['contactno'] ?? 'غير متوفر';
+                    $date = $row['creationDate'] ? date('H:i:s Y-m-d', strtotime($row['creationDate'])) : 'غير محدد';
+                    ?>
+                    <tr>
+                        <td class="text-center"><?= $cnt++ ?></td>
+                        <td><?= htmlspecialchars($contact) ?></td>
+                        <td><?= htmlspecialchars($email) ?></td>
+                        <td><span class="badge rounded-pill badge-spec px-3 py-2"><?= htmlspecialchars($spec ?: 'غير محدد') ?></span></td>
+                        <td><?= htmlspecialchars($name) ?></td>
+                        <td><?= htmlspecialchars($date) ?></td>
+                        <td class="text-center">
+                            <form method="post" onsubmit="return confirm('هل أنت متأكد أنك تريد حذف هذا الطبيب؟');" style="display:inline">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($CSRF) ?>">
+                                <button type="submit" class="action-btn btn-delete">
+                                    <i class="fas fa-trash-alt me-1"></i> حذف
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endwhile; ?>
+            <?php else: ?>
+                <tr><td colspan="7" class="text-center text-muted py-4">لا توجد سجلات متاحة</td></tr>
+            <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <?php if ($total_pages > 1): ?>
+        <nav class="mt-3">
+            <ul class="pagination justify-content-center">
+                <?php
+                // بناء رابط يحتفظ بالفلاتر
+                function q($p){ $q=$_GET; $q['page']=$p; return '?'.http_build_query($q); }
+                ?>
+                <li class="page-item <?= $page<=1?'disabled':'' ?>">
+                    <a class="page-link" href="<?= $page<=1?'#':q($page-1) ?>">&laquo; السابق</a>
+                </li>
+                <?php for($i=1;$i<=$total_pages;$i++): ?>
+                    <li class="page-item <?= $i==$page?'active':'' ?>"><a class="page-link" href="<?= q($i) ?>"><?= $i ?></a></li>
+                <?php endfor; ?>
+                <li class="page-item <?= $page>=$total_pages?'disabled':'' ?>">
+                    <a class="page-link" href="<?= $page>=$total_pages?'#':q($page+1) ?>">التالي &raquo;</a>
+                </li>
+            </ul>
+        </nav>
+    <?php endif; ?>
+</div>
+</div> <!-- end of container -->
+
 </body>
 </html>

@@ -49,41 +49,8 @@ $sql = mysqli_query($con, "SELECT * FROM doctorslog ORDER BY loginTime DESC LIMI
             padding-top: 60px;
         }
         
-        .sidebar {
-            background: linear-gradient(180deg, var(--secondary) 0%, #1a2530 100%);
-            color: white;
-            position: fixed;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            width: 250px;
-            padding-top: 20px;
-            box-shadow: 3px 0 15px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-        }
-        
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.85);
-            padding: 12px 20px;
-            margin: 5px 15px;
-            border-radius: 5px;
-            transition: all 0.3s;
-        }
-        
-        .sidebar .nav-link:hover, 
-        .sidebar .nav-link.active {
-            background-color: var(--primary);
-            color: white;
-        }
-        
-        .sidebar .nav-link i {
-            width: 25px;
-            text-align: center;
-            margin-left: 10px;
-        }
-        
         .main-content {
-            margin-right: 250px;
+            margin-right: 20px;
             padding: 20px;
         }
         
@@ -339,43 +306,8 @@ $sql = mysqli_query($con, "SELECT * FROM doctorslog ORDER BY loginTime DESC LIMI
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="text-center mb-4">
-            <h4 class="text-white">نظام المستشفى</h4>
-            <hr class="bg-light">
-        </div>
-        <nav class="nav flex-column">
-            <a class="nav-link" href="dashboard.php"><i class="fas fa-home"></i> <span>لوحة التحكم</span></a>
-            <a class="nav-link" href="manage-doctors.php"><i class="fas fa-user-md"></i> <span>إدارة الأطباء</span></a>
-            <a class="nav-link" href="manage-patients.php"><i class="fas fa-user-injured"></i> <span>إدارة المرضى</span></a>
-            <a class="nav-link active" href="doctor-logs.php"><i class="fas fa-history"></i> <span>سجلات الجلسات</span></a>
-            <a class="nav-link" href="appointments.php"><i class="fas fa-calendar-check"></i> <span>المواعيد</span></a>
-            <a class="nav-link" href="reports.php"><i class="fas fa-chart-bar"></i> <span>التقارير</span></a>
-            <a class="nav-link" href="settings.php"><i class="fas fa-cog"></i> <span>الإعدادات</span></a>
-        </nav>
-    </div>
-    
-    <!-- Top Navigation -->
-    <nav class="navbar navbar-expand">
-        <div class="container-fluid">
-            <div class="d-flex align-items-center">
-                <h5 class="mb-0">لوحة تحكم المسؤول</h5>
-            </div>
-            
-            <div class="d-flex align-items-center">
-                <div class="dropdown">
-                    <a href="#" class="dropdown-toggle d-flex align-items-center text-dark text-decoration-none" id="userDropdown" data-bs-toggle="dropdown">
-                        <img src="https://ui-avatars.com/api/?name=المسؤول&background=3498db&color=fff" class="rounded-circle me-2" width="35" height="35">
-                        <span class="d-none d-md-inline">المسؤول</span>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-end">
-                        <a class="dropdown-item" href="logout.php"><i class="fas fa-sign-out-alt me-2"></i> تسجيل الخروج</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <?php include('include/sidebar.php'); ?>
+    <?php include('include/header.php'); ?>
     
     <!-- Main Content -->
     <div class="main-content">
@@ -440,7 +372,7 @@ $sql = mysqli_query($con, "SELECT * FROM doctorslog ORDER BY loginTime DESC LIMI
             </div>
             <div class="card-body">
                 <?php if (isset($_SESSION['msg'])): ?>
-                    <div class="alert alertinfo - doctor-logs.php:443"><?php echo htmlentities($_SESSION['msg']); ?></div>
+                    <div class="alert alertinfo - doctor-logs.php:375"><?php echo htmlentities($_SESSION['msg']); ?></div>
                     <?php unset($_SESSION['msg']); ?>
                 <?php endif; ?>
                 
@@ -475,23 +407,23 @@ $sql = mysqli_query($con, "SELECT * FROM doctorslog ORDER BY loginTime DESC LIMI
                                     $status_text = ($status == 1) ? 'نجاح' : 'فشل';
                             ?>
                                     <tr>
-                                        <td class="textcenter - doctor-logs.php:478"><?php echo $cnt; ?></td>
+                                        <td class="textcenter - doctor-logs.php:410"><?php echo $cnt; ?></td>
                                         <td><?php echo htmlspecialchars($uid); ?></td>
                                         <td><?php echo htmlspecialchars($username); ?></td>
                                         <td><?php echo htmlspecialchars($userip); ?></td>
                                         <td><?php echo htmlspecialchars($loginTime); ?></td>
                                         <td><?php echo htmlspecialchars($logout); ?></td>
-                                        <td class="textcenter - doctor-logs.php:484"><span class="status-badge <?php echo $status_class; ?>"><?php echo $status_text; ?></span></td>
+                                        <td class="textcenter - doctor-logs.php:416"><span class="status-badge <?php echo $status_class; ?>"><?php echo $status_text; ?></span></td>
                                     </tr>
                             <?php
                                     $cnt++;
                                 }
                             } else {
-                                echo '<tr><td colspan="7" class="textcenter textdanger">حدث خطأ في جلب البيانات من قاعدة البيانات</td></tr> - doctor-logs.php:490';
+                                echo '<tr><td colspan="7" class="textcenter textdanger">حدث خطأ في جلب البيانات من قاعدة البيانات</td></tr> - doctor-logs.php:422';
                             }
                             
                             if (!$has_records) {
-                                echo '<tr><td colspan="7" class="norecords"><i class="fas fainbox"></i><h4>لا توجد سجلات متاحة</h4><p class="textmuted">لم يتم تسجيل أي جلسات حتى الآن</p></td></tr> - doctor-logs.php:494';
+                                echo '<tr><td colspan="7" class="norecords"><i class="fas fainbox"></i><h4>لا توجد سجلات متاحة</h4><p class="textmuted">لم يتم تسجيل أي جلسات حتى الآن</p></td></tr> - doctor-logs.php:426';
                             }
                             ?>
                         </tbody>
@@ -508,7 +440,7 @@ $sql = mysqli_query($con, "SELECT * FROM doctorslog ORDER BY loginTime DESC LIMI
                         <span>الانتقال إلى:</span>
                         <select id="pageSelect" onchange="location.href='doctor-logs.php?page=' + this.value">
                             <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                                <option value="<?php echo $i; ?> - doctor-logs.php:511" <?php if ($i == $page) echo 'selected'; ?>>
+                                <option value="<?php echo $i; ?> - doctor-logs.php:443" <?php if ($i == $page) echo 'selected'; ?>>
                                     الصفحة <?php echo $i; ?>
                                 </option>
                             <?php endfor; ?>

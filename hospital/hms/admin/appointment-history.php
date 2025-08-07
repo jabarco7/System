@@ -2,211 +2,178 @@
 session_start();
 error_reporting(0);
 include('include/config.php');
-if(strlen($_SESSION['id']==0)) {
- header('location:logout.php');
-  } else{
+mysqli_set_charset($con, "utf8");
+if (strlen($_SESSION['id']) == 0) {
+	header('location:logout.php');
+	exit();
+}
+
+// إحصائيات
+$total = $active = $cancelByPatient = $cancelByDoctor = 0;
+$sqlStats = mysqli_query($con, "SELECT userStatus, doctorStatus FROM appointment");
+while ($row = mysqli_fetch_array($sqlStats)) {
+	$total++;
+	if ($row['userStatus'] == 1 && $row['doctorStatus'] == 1) $active++;
+	if ($row['userStatus'] == 0 && $row['doctorStatus'] == 1) $cancelByPatient++;
+	if ($row['userStatus'] == 1 && $row['doctorStatus'] == 0) $cancelByDoctor++;
+}
 ?>
 <!DOCTYPE html>
-<html lang="en">
-	<head>
-		<title>المرضى | تاريخ الواعيد</title>
-		
-		<link href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic" rel="stylesheet" type="text/css" />
-		<link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
-		<link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
-		<link rel="stylesheet" href="vendor/themify-icons/themify-icons.min.css">
-		<link href="vendor/animate.css/animate.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/perfect-scrollbar/perfect-scrollbar.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/switchery/switchery.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-touchspin/jquery.bootstrap-touchspin.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/select2/select2.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-datepicker/bootstrap-datepicker3.standalone.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-timepicker/bootstrap-timepicker.min.css" rel="stylesheet" media="screen">
-		<link rel="stylesheet" href="assets/css/styles.css">
-		<link rel="stylesheet" href="assets/css/plugins.css">
-		<link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
-	</head>
-	<body>
-		<div id="app">		
-<?php include('include/sidebar.php');?>
-			<div class="app-content">
-				
+<html lang="ar" dir="rtl">
 
-					<?php include('include/header.php');?>
-				<!-- end: TOP NAVBAR -->
-				<div class="main-content" >
-					<div class="wrap-content container" id="container">
-						<!-- start: PAGE TITLE -->
-						<section id="page-title">
-							<div class="row">
-								<div class="col-sm-8">
-									<h1 class="mainTitle">المرضى  | تاريخ الواعيد</h1>
-																	</div>
-								<ol class="breadcrumb">
-									<li>
-										<span>المرضى </span>
-									</li>
-									<li class="active">
-										<span>تاريخ الواعيد</span>
-									</li>
-								</ol>
-							</div>
-						</section>
-						<!-- end: PAGE TITLE -->
-						<!-- start: BASIC EXAMPLE -->
-						<div class="container-fluid container-fullw bg-white">
-						
+<head>
+	<meta charset="UTF-8">
+	<title>تاريخ المواعيد</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+	<style>
+		body {
+			background-color: #f5f7fa;
+			font-family: 'Cairo', sans-serif;
+		}
+		.sidebar {
+			position: fixed;
+			width: 250px;
+			height: 100vh;
+			background-color: #1e293b;
+			color: white;
+			padding-top: 20px;
+		}
+		.sidebar a {
+			color: #fff;
+			display: block;
+			padding: 12px 20px;
+			text-decoration: none;
+			font-size: 15px;
+		}
+		.sidebar a:hover {
+			background-color: #334155;
+		}
+		.main {
+			margin-right: 250px;
+			padding: 20px;
+		}
+		.header {
+			background: linear-gradient(90deg, #3b82f6, #60a5fa);
+			padding: 20px;
+			color: white;
+			border-radius: 10px;
+			margin-bottom: 30px;
+		}
+		.stats-box {
+			background: #fff;
+			border-radius: 8px;
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+			padding: 20px;
+			text-align: center;
+			margin-bottom: 20px;
+		}
+		.stats-box i {
+			font-size: 30px;
+			margin-bottom: 10px;
+			color: #3b82f6;
+		}
+		.search-bar input {
+			width: 100%;
+			padding: 10px;
+			border-radius: 8px;
+			border: 1px solid #ccc;
+		}
+	</style>
+</head>
 
-									<div class="row">
-								<div class="col-md-12">
-									
-									<p style="color:red; - appointment-history.php:63"><?php echo htmlentities($_SESSION['msg']);?>
-								<?php echo htmlentities($_SESSION['msg - appointment-history.php:64']="");?></p>	
-									<table class="table table-hover" id="sample-table-1">
-										<thead>
-											<tr>
-												<th class="center">#</th>
-												<th class="hidden-xs">اسم الطبيب</th>
-												<th>اسم المريض</th>
-												<th>التخصص</th>
-												<th>رسوم الاستشارة</th>
-												<th>التعيين التاريخ / الوقت </th>
-												<th>تاريخ إنشاء الموعد  </th>
-												<th>الوضع الحالي</th>
-												<th>الإجراء</th>
-												
-											</tr>
-										</thead>
-										<tbody>
-<?php
-$sql=mysqli_query($con,"select doctors.doctorName as docname,users.fullName as pname,appointment.*  from appointment join doctors on doctors.id=appointment.doctorId join users on users.id=appointment.userId ");
-$cnt=1;
-while($row=mysqli_fetch_array($sql))
-{
-?>
+<body>
+	<div class="sidebar">
+		<h4 class="text-center mb-4">المسؤول</h4>
+		<a href="#"><i class="fas fa-home"></i> لوحة التحكم</a>
+		<a href="#"><i class="fas fa-user-md"></i> الأطباء</a>
+		<a href="#"><i class="fas fa-users"></i> إدارة المرضى</a>
+		<a href="#"><i class="fas fa-calendar"></i> تاريخ المواعيد</a>
+	</div>
+	<div class="main">
+		<div class="header">
+			<h2>إدارة المواعيد</h2>
+		</div>
 
-											<tr>
-												<td class="center - appointment-history.php:89"><?php echo $cnt;?>.</td>
-												<td class="hiddenxs - appointment-history.php:90"><?php echo $row['docname'];?></td>
-												<td class="hiddenxs - appointment-history.php:91"><?php echo $row['pname'];?></td>
-												<td><?php echo $row['doctorSpecialization - appointment-history.php:92'];?></td>
-												<td><?php echo $row['consultancyFees - appointment-history.php:93'];?></td>
-												<td><?php echo $row['appointmentDate - appointment-history.php:94'];?> / <?php echo
-												 $row['appointmentTime'];?>
-												</td>
-												<td><?php echo $row['postingDate - appointment-history.php:97'];?></td>
-												<td>
-<?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
-{
-	echo "Active - appointment-history.php:101";
-}
-if(($row['userStatus']==0) && ($row['doctorStatus']==1))  
-{
-	echo "Cancel by Patient - appointment-history.php:105";
-}
-
-if(($row['userStatus']==1) && ($row['doctorStatus']==0))  
-{
-	echo "Cancel by Doctor - appointment-history.php:110";
-}
-
-
-
-												?></td>
-												<td >
-												<div class="visible-md visible-lg hidden-sm hidden-xs">
-							<?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
-{ 
-
-													
-echo "No Action yet - appointment-history.php:122";
-	 } else {
-
-		echo "Canceled - appointment-history.php:125";
-		} ?>
-												</div>
-												<div class="visible-xs visible-sm hidden-md hidden-lg">
-													<div class="btn-group" dropdown is-open="status.isopen">
-														<button type="button" class="btn btn-primary btn-o btn-sm dropdown-toggle" dropdown-toggle>
-															<i class="fa fa-cog"></i>&nbsp;<span class="caret"></span>
-														</button>
-														<ul class="dropdown-menu pull-right dropdown-light" role="menu">
-															<li>
-																<a href="#">
-																	تعديل
-																</a>
-															</li>
-															<li>
-																<a href="#">
-																	مشاركة
-																</a>
-															</li>
-															<li>
-																<a href="#">
-																	حذف
-																</a>
-															</li>
-														</ul>
-													</div>
-												</div></td>
-											</tr>
-											
-											<?php 
-$cnt=$cnt+1;
-											 }?>
-											
-											
-										</tbody>
-									</table>
-								</div>
-							</div>
-								</div>
-						
-						<!-- end: BASIC EXAMPLE -->
-						<!-- end: SELECT BOXES -->
-						
-					</div>
+		<div class="row text-center">
+			<div class="col-md-3">
+				<div class="stats-box">
+					<i class="fas fa-calendar-check"></i>
+					<h6>إجمالي المواعيد</h6>
+					<p><?php echo $total; ?></p>
 				</div>
 			</div>
-			<!-- start: FOOTER -->
-	<?php include('include/footer.php');?>
-			<!-- end: FOOTER -->
-		
-			<!-- start: SETTINGS -->
-	<?php include('include/setting.php');?>
-			
-			<!-- end: SETTINGS -->
+			<div class="col-md-3">
+				<div class="stats-box">
+					<i class="fas fa-user-check"></i>
+					<h6>مواعيد نشطة</h6>
+					<p><?php echo $active; ?></p>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="stats-box">
+					<i class="fas fa-user-slash"></i>
+					<h6>أُلغي من المريض</h6>
+					<p><?php echo $cancelByPatient; ?></p>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="stats-box">
+					<i class="fas fa-user-md-slash"></i>
+					<h6>أُلغي من الطبيب</h6>
+					<p><?php echo $cancelByDoctor; ?></p>
+				</div>
+			</div>
 		</div>
-		<!-- start: MAIN JAVASCRIPTS -->
-		<script src="vendor/jquery/jquery.min.js"></script>
-		<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-		<script src="vendor/modernizr/modernizr.js"></script>
-		<script src="vendor/jquery-cookie/jquery.cookie.js"></script>
-		<script src="vendor/perfect-scrollbar/perfect-scrollbar.min.js"></script>
-		<script src="vendor/switchery/switchery.min.js"></script>
-		<!-- end: MAIN JAVASCRIPTS -->
-		<!-- start: JAVASCRIPTS REQUIRED FOR THIS PAGE ONLY -->
-		<script src="vendor/maskedinput/jquery.maskedinput.min.js"></script>
-		<script src="vendor/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js"></script>
-		<script src="vendor/autosize/autosize.min.js"></script>
-		<script src="vendor/selectFx/classie.js"></script>
-		<script src="vendor/selectFx/selectFx.js"></script>
-		<script src="vendor/select2/select2.min.js"></script>
-		<script src="vendor/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
-		<script src="vendor/bootstrap-timepicker/bootstrap-timepicker.min.js"></script>
-		<!-- end: JAVASCRIPTS REQUIRED FOR THIS PAGE ONLY -->
-		<!-- start: CLIP-TWO JAVASCRIPTS -->
-		<script src="assets/js/main.js"></script>
-		<!-- start: JavaScript Event Handlers for this page -->
-		<script src="assets/js/form-elements.js"></script>
-		<script>
-			jQuery(document).ready(function() {
-				Main.init();
-				FormElements.init();
-			});
-		</script>
-		<!-- end: JavaScript Event Handlers for this page -->
-		<!-- end: CLIP-TWO JAVASCRIPTS -->
-	</body>
+
+		<div class="card mt-4">
+			<div class="card-body">
+				<div class="mb-3 search-bar">
+					<input type="text" placeholder="ابحث باسم المريض أو رقم الهاتف...">
+				</div>
+				<table class="table table-hover align-middle">
+					<thead class="table-light">
+						<tr>
+							<th>#</th>
+							<th>الطبيب</th>
+							<th>المريض</th>
+							<th>التخصص</th>
+							<th>الرسوم</th>
+							<th>التاريخ / الوقت</th>
+							<th>تاريخ الإنشاء</th>
+							<th>الحالة</th>
+							<th>الإجراء</th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php
+						$cnt = 1;
+						$sql = mysqli_query($con, "SELECT doctors.doctorName AS docname, users.fullName AS pname, appointment.* FROM appointment JOIN doctors ON doctors.id=appointment.doctorId JOIN users ON users.id=appointment.userId");
+						while ($row = mysqli_fetch_array($sql)) {
+						?>
+							<tr>
+								<td><?php echo $cnt++; ?></td>
+								<td><?php echo $row['docname - appointment-history.php:156']; ?></td>
+								<td><?php echo $row['pname - appointment-history.php:157']; ?></td>
+								<td><?php echo $row['doctorSpecialization - appointment-history.php:158']; ?></td>
+								<td><?php echo $row['consultancyFees - appointment-history.php:159']; ?></td>
+								<td><?php echo $row['appointmentDate - appointment-history.php:160'] . ' / ' . $row['appointmentTime']; ?></td>
+								<td><?php echo $row['postingDate - appointment-history.php:161']; ?></td>
+								<td>
+									<?php
+									if ($row['userStatus - appointment-history.php:164'] == 1 && $row['doctorStatus'] == 1) echo "نشط";
+									elseif ($row['userStatus - appointment-history.php:165'] == 0 && $row['doctorStatus'] == 1) echo "أُلغي من المريض";
+									elseif ($row['userStatus - appointment-history.php:166'] == 1 && $row['doctorStatus'] == 0) echo "أُلغي من الطبيب";
+									?>
+								</td>
+								<td><a class="btn btn-sm btn-outline-primary" href="#"><i class="fas fa-eye"></i> عرض</a></td>
+							</tr>
+						<?php } ?>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</body>
+
 </html>
-<?php } ?>
