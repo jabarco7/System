@@ -247,9 +247,6 @@ echo "<script>window.location.href =''</script> - index.php:12";
 
     </section>
     
-    
-  
-    
     <!--  ************************* About Us Starts Here ************************** -->
         
     <section id="about_us" class="about-us">
