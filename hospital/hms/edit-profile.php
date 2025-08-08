@@ -1,216 +1,186 @@
 <?php
 session_start();
-//error_reporting(0);
+// error_reporting(0);
 include('include/config.php');
 include('include/checklogin.php');
 check_login();
-if(isset($_POST['submit']))
-{
-	$fname=$_POST['fname'];
-$address=$_POST['address'];
-$city=$_POST['city'];
-$gender=$_POST['gender'];
 
-$sql=mysqli_query($con,"Update users set fullName='$fname',address='$address',city='$city',gender='$gender' where id='".$_SESSION['id']."'");
-if($sql)
-{
-$msg="تم تحديث ملفك الشخصي بنجاح";
+$msg = '';
+$err = '';
 
-
+// CSRF token
+if (empty($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(16));
 }
 
+$uid = (int)($_SESSION['id'] ?? 0);
+
+// جلب بيانات المستخدم للعرض المسبق
+$stmt = mysqli_prepare($con, "SELECT fullName, address, city, gender, email, regDate, updationDate FROM users WHERE id = ? LIMIT 1");
+mysqli_stmt_bind_param($stmt, 'i', $uid);
+mysqli_stmt_execute($stmt);
+$userRes = mysqli_stmt_get_result($stmt);
+$user = mysqli_fetch_assoc($userRes);
+mysqli_stmt_close($stmt);
+
+if (isset($_POST['submit'])) {
+    // تحقق CSRF
+    if (!hash_equals($_SESSION['csrf'], $_POST['csrf'] ?? '')) {
+        $err = 'جلسة غير صالحة، حدّث الصفحة وحاول مرة أخرى.';
+    } else {
+        $fname  = trim($_POST['fname'] ?? '');
+        $address= trim($_POST['address'] ?? '');
+        $city   = trim($_POST['city'] ?? '');
+        $gender = trim($_POST['gender'] ?? '');
+
+        if ($fname === '' || $city === '' || $gender === '') {
+            $err = 'الرجاء تعبئة الحقول المطلوبة.';
+        } else {
+            $stmt = mysqli_prepare($con, "UPDATE users SET fullName = ?, address = ?, city = ?, gender = ?, updationDate = NOW() WHERE id = ?");
+            mysqli_stmt_bind_param($stmt, 'ssssi', $fname, $address, $city, $gender, $uid);
+            if (mysqli_stmt_execute($stmt)) {
+                $msg = 'تم تحديث ملفك الشخصي بنجاح';
+                // حدّث البيانات المعروضة فوراً
+                $user['fullName'] = $fname;
+                $user['address']  = $address;
+                $user['city']     = $city;
+                $user['gender']   = $gender;
+                $user['updationDate'] = date('Y-m-d H:i:s');
+                // حدّث اسم المريض في السيشن لو كنت تستخدمه في الواجهة
+                $_SESSION['patient_name'] = $fname ?: ($_SESSION['patient_name'] ?? '');
+            } else {
+                $err = 'تعذر التحديث الآن. حاول لاحقًا.';
+            }
+            mysqli_stmt_close($stmt);
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
-	<head>
-		<title>المستخدم | تحرير الملف الشخصي</title>
-		
-		<link href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic" rel="stylesheet" type="text/css" />
-		<link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
-		<link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
-		<link rel="stylesheet" href="vendor/themify-icons/themify-icons.min.css">
-		<link href="vendor/animate.css/animate.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/perfect-scrollbar/perfect-scrollbar.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/switchery/switchery.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-touchspin/jquery.bootstrap-touchspin.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/select2/select2.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-datepicker/bootstrap-datepicker3.standalone.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-timepicker/bootstrap-timepicker.min.css" rel="stylesheet" media="screen">
-		<link rel="stylesheet" href="assets/css/styles.css">
-		<link rel="stylesheet" href="assets/css/plugins.css">
-		<link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
-	</head>
-	<body>
-		<div id="app">		
-<?php include('include/sidebar.php');?>
-			<div class="app-content">				
-						<?php include('include/header.php');?>						
-				<!-- end: TOP NAVBAR -->
-				<div class="main-content" >
-					<div class="wrap-content container" id="container">
-						<!-- start: PAGE TITLE -->
-						<section id="page-title">
-							<div class="row">
-								<div class="col-sm-8">
-									<h1 class="mainTitle">المستخدم | تحرير الملف الشخصي</h1>
-																	</div>
-								<ol class="breadcrumb">
-									<li>
-										<span>المستخدم </span>
-									</li>
-									<li class="active">
-										<span>تحرير الملف الشخصي</span>
-									</li>
-								</ol>
-							</div>
-						</section>
-						<!-- end: PAGE TITLE -->
-						<!-- start: BASIC EXAMPLE -->
-						<div class="container-fluid container-fullw bg-white">
-							<div class="row">
-								<div class="col-md-12">
-<h5 style="color: green; font-size:18px; ">
-<?php if($msg) { echo htmlentities($msg);}?> </h5>
-									<div class="row margin-top-30">
-										<div class="col-lg-8 col-md-12">
-											<div class="panel panel-white">
-												<div class="panel-heading">
-													<h5 class="panel-title">تحرير الملف لشخصي</h5>
-												</div>
-												<div class="panel-body">
-									<?php $sql=mysqli_query($con,"select * from users where id='".$_SESSION['id']."'");
-									while($data=mysqli_fetch_array($sql))
-										{
-											?>
-											<h4><?php echo htmlentities($data['fullName']);?> ملف تعريف </h4>
-											<p><b>تاريخ تسجيل الملف الشخصي </b><?php echo htmlentities($data['regDate']);?></p>
-											<?php if($data['updationDate']){?>
-												<p><b>التحديث  الاخير للملف الشخصي: </b><?php echo htmlentities($data['updationDate']);?></p>
-												<?php } ?>
-<hr />													<form role="form" name="edit" method="post">
-													
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>المستخدم | تحرير الملف الشخصي</title>
 
-<div class="form-group">
-															<label for="fname">
-																 اسم المستخدم
-															</label>
-	<input type="text" name="fname" class="form-control" value="<?php echo htmlentities($data['fullName']);?>" >
-														</div>
+    <link href="http://fonts.googleapis.com/css?family=Tajawal:300,400,500,700" rel="stylesheet">
+    <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="vendor/themify-icons/themify-icons.min.css">
+    <link href="vendor/animate.css/animate.min.css" rel="stylesheet">
+    <link href="vendor/perfect-scrollbar/perfect-scrollbar.min.css" rel="stylesheet">
+    <link href="vendor/switchery/switchery.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/plugins.css">
+    <link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
 
+    <style>
+        body{background:#f0f5f9;font-family:'Tajawal',sans-serif}
+        .container-narrow{max-width:900px;margin:24px auto}
+        .page-head{
+            background:linear-gradient(90deg,#3498db,#4aa8e0);
+            color:#fff;border-radius:12px;padding:16px 18px;margin-bottom:16px;text-align:center
+        }
+        .card-clean{background:#fff;border-radius:14px;box-shadow:0 8px 20px rgba(0,0,0,.06);padding:20px}
+        .meta small{color:#6c757d}
+        .form-label{font-weight:600}
+        .btn-primary{background-color: #3498db;border:none}
+        .alert-compact{border-radius:10px;padding:10px 12px}
+    </style>
+</head>
+<body>
+<div id="app">
 
-<div class="form-group">
-															<label for="address">
-																 عنوان
-															</label>
-					<textarea name="address" class="form-control"><?php echo htmlentities($data['address']);?></textarea>
-														</div>
-<div class="form-group">
-															<label for="city">
-																 مدينة
-															</label>
-		<input type="text" name="city" class="form-control" required="required"  value="<?php echo htmlentities($data['city']);?>" >
-														</div>
-	
-<div class="form-group">
-									<label for="gender">
-																جنس
-															</label>
+    <div class="container-narrow">
+        <div class="page-head">
+            <h4 class="m-0">تحرير الملف الشخصي</h4>
+            <small class="opacity-75">قم بتعديل معلوماتك الأساسية</small>
+        </div>
 
-<select name="gender" class="form-control" required="required" >
-<option value="<?php echo htmlentities($data['gender']);?>"><?php echo htmlentities($data['gender']);?></option>
-<option value="ذكر">ذكر</option>	
-<option value="انثى">انثى</option>	
-<option value="اخر">اخر</option>	
-</select>
+        <?php if ($msg): ?>
+            <div class="alert alert-success alert-compact"><i class="fa fa-check-circle"></i> <?php echo htmlentities($msg); ?></div>
+        <?php endif; ?>
+        <?php if ($err): ?>
+            <div class="alert alert-danger alert-compact"><i class="fa fa-exclamation-triangle"></i> <?php echo htmlentities($err); ?></div>
+        <?php endif; ?>
 
-														</div>
+        <div class="card-clean">
+            <?php if ($user): ?>
+                <div class="d-flex justify-content-between align-items-center mb-3 meta">
+                    <div>
+                        <div class="fw-bold"><?php echo htmlentities($user['fullName']); ?> — ملف المستخدم</div>
+                        <small>تاريخ التسجيل: <?php echo htmlentities($user['regDate']); ?></small>
+                        <?php if (!empty($user['updationDate'])): ?>
+                            <small class="ms-2">آخر تحديث: <?php echo htmlentities($user['updationDate']); ?></small>
+                        <?php endif; ?>
+                    </div>
+                    <span class="badge bg-light text-dark">البريد: <?php echo htmlentities($user['email']); ?></span>
+                </div>
+                <hr>
 
-<div class="form-group">
-									<label for="fess">
-																 البريد الإلتروني للمستخدم
-															</label>
-					<input type="email" name="uemail" class="form-control"  readonly="readonly"  value="<?php echo htmlentities($data['email']);?>">
-					<a href="change-emaild.php">تحديث معرف البريد الإلكتروني الخاص بك</a>
-														</div>
+                <form method="post" autocomplete="off">
+                    <input type="hidden" name="csrf" value="<?php echo $_SESSION['csrf']; ?>">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="fname">اسم المستخدم</label>
+                            <input type="text" id="fname" name="fname" class="form-control" value="<?php echo htmlentities($user['fullName']); ?>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="city">المدينة</label>
+                            <input type="text" id="city" name="city" class="form-control" value="<?php echo htmlentities($user['city']); ?>" required>
+                        </div>
 
+                        <div class="col-md-12">
+                            <label class="form-label" for="address">العنوان</label>
+                            <textarea id="address" name="address" class="form-control" rows="3" placeholder="أدخل العنوان"><?php echo htmlentities($user['address']); ?></textarea>
+                        </div>
 
+                        <div class="col-md-6">
+                            <label class="form-label" for="gender">الجنس</label>
+                            <select id="gender" name="gender" class="form-control" required>
+                                <?php
+                                $g = $user['gender'] ?? '';
+                                $opts = ['ذكر','انثى','اخر'];
+                                if ($g && !in_array($g,$opts,true)) { echo '<option value="'.htmlentities($g).'" selected>'.htmlentities($g).'</option>'; }
+                                foreach ($opts as $op) {
+                                    $sel = ($op === $g) ? 'selected' : '';
+                                    echo '<option value="'.$op.'" '.$sel.'>'.$op.'</option>';
+                                }
+                                ?>
+                            </select>
+                        </div>
 
-														
-														
-														
-														
-														<button type="submit" name="submit" class="btn btn-o btn-primary">
-															تحديث
-														</button>
-													</form>
-													<?php } ?>
-												</div>
-											</div>
-										</div>
-											
-											</div>
-										</div>
-									<div class="col-lg-12 col-md-12">
-											<div class="panel panel-white">
-												
-												
-											</div>
-										</div>
-									</div>
-								</div>
-						
-						<!-- end: BASIC EXAMPLE -->
-			
-					
-					
-						
-						
-					
-						<!-- end: SELECT BOXES -->
-						
-					</div>
-				</div>
-			</div>
-			<!-- start: FOOTER -->
-	<?php include('include/footer.php');?>
-			<!-- end: FOOTER -->
-		
-			<!-- start: SETTINGS -->
-	<?php include('include/setting.php');?>
-			
-			<!-- end: SETTINGS -->
-		</div>
-		<!-- start: MAIN JAVASCRIPTS -->
-		<script src="vendor/jquery/jquery.min.js"></script>
-		<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-		<script src="vendor/modernizr/modernizr.js"></script>
-		<script src="vendor/jquery-cookie/jquery.cookie.js"></script>
-		<script src="vendor/perfect-scrollbar/perfect-scrollbar.min.js"></script>
-		<script src="vendor/switchery/switchery.min.js"></script>
-		<!-- end: MAIN JAVASCRIPTS -->
-		<!-- start: JAVASCRIPTS REQUIRED FOR THIS PAGE ONLY -->
-		<script src="vendor/maskedinput/jquery.maskedinput.min.js"></script>
-		<script src="vendor/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js"></script>
-		<script src="vendor/autosize/autosize.min.js"></script>
-		<script src="vendor/selectFx/classie.js"></script>
-		<script src="vendor/selectFx/selectFx.js"></script>
-		<script src="vendor/select2/select2.min.js"></script>
-		<script src="vendor/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
-		<script src="vendor/bootstrap-timepicker/bootstrap-timepicker.min.js"></script>
-		<!-- end: JAVASCRIPTS REQUIRED FOR THIS PAGE ONLY -->
-		<!-- start: CLIP-TWO JAVASCRIPTS -->
-		<script src="assets/js/main.js"></script>
-		<!-- start: JavaScript Event Handlers for this page -->
-		<script src="assets/js/form-elements.js"></script>
-		<script>
-			jQuery(document).ready(function() {
-				Main.init();
-				FormElements.init();
-			});
-		</script>
-		<!-- end: JavaScript Event Handlers for this page -->
-		<!-- end: CLIP-TWO JAVASCRIPTS -->
-	</body>
+                        <div class="col-md-6">
+                            <label class="form-label">البريد الإلكتروني</label>
+                            <div class="input-group">
+                                <input type="email" class="form-control" value="<?php echo htmlentities($user['email']); ?>" readonly>
+                                <a class="btn btn-outline-secondary" href="change-emaild.php">تحديث البريد</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" name="submit" class="btn btn-primary">
+                            <i class="fa fa-save"></i> تحديث
+                        </button>
+                        <a href="dashboard.php" class="btn btn-outline-secondary">
+                            <i class="fa fa-arrow-right"></i> رجوع للوحة
+                        </a>
+                    </div>
+                </form>
+            <?php else: ?>
+                <div class="alert alert-warning">لم يتم العثور على بيانات المستخدم.</div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<script src="vendor/jquery/jquery.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+<script src="vendor/modernizr/modernizr.js"></script>
+<script src="vendor/jquery-cookie/jquery.cookie.js"></script>
+<script src="vendor/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+<script src="vendor/switchery/switchery.min.js"></script>
+<script src="assets/js/main.js"></script>
+<script>jQuery(function(){ if (window.Main) Main.init(); });</script>
+</body>
 </html>
-<meta charset="UTF-8">

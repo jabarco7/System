@@ -1,117 +1,86 @@
 <?php
 session_start();
-error_reporting(0);
-include("include/config.php");
-//Checking Details for reset password
-if(isset($_POST['submit'])){
-$name=$_POST['fullname'];
-$email=$_POST['email'];
-$query=mysqli_query($con,"select id from  users where fullName='$name' and email='$email'");
-$row=mysqli_num_rows($query);
-if($row>0){
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-$_SESSION['name']=$name;
-$_SESSION['email']=$email;
-header('location:reset-password.php');
-} else {
-echo "<script>alert('بيانات غير صحيحة. يُرجى المحاولة باستخدام بيانات صحيحة.');</script>";
-echo "<script>window.location.href ='forgot-password.php'</script>";
+include("include/config.php"); // الاتصال بقاعدة البيانات
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // قراءة البريد
+    $email = strtolower(trim($_POST['email'] ?? ''));
 
-}
+    if ($email === '') {
+        echo "<script>alert('يرجى إدخال البريد الإلكتروني.');</script>";
+    } else {
+        // استعلام آمن للتحقق من وجود الإيميل
+        $stmt = $con->prepare("SELECT id FROM users WHERE TRIM(LOWER(email)) = ? LIMIT 1");
+        if (!$stmt) {
+            die("خطأ في تحضير الاستعلام: " . $con->error);
+        }
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $stmt->store_result();
 
+        if ($stmt->num_rows === 1) {
+            // إذا وجد حساب → حفظ الإيميل في السيشن والتحويل لصفحة إعادة التعيين
+            $_SESSION['reset_email'] = $email;
+            header('Location: reset-password.php');
+            exit;
+        } else {
+            echo "<script>alert('لا يوجد حساب بهذا البريد الإلكتروني.');</script>";
+        }
+        $stmt->close();
+    }
 }
 ?>
 
-
 <!DOCTYPE html>
-<html lang="en">
-	<head>
-		<title>Pateint  Password Recovery</title>
-		
-		<link href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic" rel="stylesheet" type="text/css" />
-		<link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
-		<link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
-		<link rel="stylesheet" href="vendor/themify-icons/themify-icons.min.css">
-		<link href="vendor/animate.css/animate.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/perfect-scrollbar/perfect-scrollbar.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/switchery/switchery.min.css" rel="stylesheet" media="screen">
-		<link rel="stylesheet" href="assets/css/styles.css">
-		<link rel="stylesheet" href="assets/css/plugins.css">
-		<link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
-	</head>
-	<body class="login">
-		<div class="row">
-			<div class="main-login col-xs-10 col-xs-offset-1 col-sm-8 col-sm-offset-2 col-md-4 col-md-offset-4">
-				<div class="logo margin-top-30">
-				<a href="../index.php"><h2> اعادة تعيين كلمه مرور المريض</h2></a>
-				</div>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>إعادة تعيين كلمة مرور المريض</title>
+  <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
+</head>
+<body class="login">
 
-				<div class="box-login">
-					<form class="form-login" method="post">
-						<fieldset>
-							<legend>
-								اعادة تعين كلمة مرور المريض
-							</legend>
-							<p>
-								يرجى إدخال بريدك الإلكتروني وكلمة المرور لاستعادة كلمة المرور الخاصة بك.<br />
-					
-							</p>
+  <div class="row" style="margin-top: 40px;">
+    <div class="main-login col-xs-10 col-xs-offset-1 col-sm-8 col-sm-offset-2 col-md-4 col-md-offset-4">
+      <div class="logo margin-top-30">
+        <h2>إعادة تعيين كلمة مرور المريض</h2>
+      </div>
 
-							<div class="form-group form-actions">
-								<span class="input-icon">
-									<input type="text" class="form-control" name="fullname" placeholder="الاسم الكامل المسجل">
-									<i class="fa fa-lock"></i>
-									 </span>
-							</div>
+      <div class="box-login">
+        <form method="post" action="" novalidate style="margin-top: 20px;">
+          <fieldset>
+            <legend>استرجاع كلمة المرور</legend>
+            <p>يرجى إدخال بريدك الإلكتروني لاستعادة كلمة المرور.</p>
 
-							<div class="form-group">
-								<span class="input-icon">
-									<input type="email" class="form-control" name="email" placeholder="البريد الإلكتروني المسجل">
-									<i class="fa fa-user"></i> </span>
-							</div>
+            <div class="form-group">
+              <label for="email">البريد الإلكتروني المسجل</label>
+              <input type="email" class="form-control" id="email" name="email" placeholder="البريد الإلكتروني المسجل" required>
+            </div>
 
-							<div class="form-actions">
-								
-								<button type="submit" class="btn btn-primary pull-right" name="submit">
-									اعادة التعين <i class="fa fa-arrow-circle-right"></i>
-								</button>
-							</div>
-							<div class="new-account">
-								هل لدي حساب بالفعل? 
-								<a href="user-login.php">
-									تسجيل الدخول
-								</a>
-							</div>
-						</fieldset>
-					</form>
+            <div class="form-actions" style="margin-top: 10px;">
+              <button type="submit" class="btn btn-primary pull-right" name="submit">
+                متابعة <i class="fa fa-arrow-circle-right"></i>
+              </button>
+            </div>
 
-					<div class="copyright">
-						&copy; <span class="text-bold text-uppercase">نظام إدارة المستشفيات</span>
-					</div>
-			
-				</div>
+            <div class="new-account" style="margin-top: 10px;">
+              <a href="user-login.php">رجوع</a>
+            </div>
+          </fieldset>
+        </form>
 
-			</div>
-		</div>
-		<script src="vendor/jquery/jquery.min.js"></script>
-		<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-		<script src="vendor/modernizr/modernizr.js"></script>
-		<script src="vendor/jquery-cookie/jquery.cookie.js"></script>
-		<script src="vendor/perfect-scrollbar/perfect-scrollbar.min.js"></script>
-		<script src="vendor/switchery/switchery.min.js"></script>
-		<script src="vendor/jquery-validation/jquery.validate.min.js"></script>
-	
-		<script src="assets/js/main.js"></script>
+        <div class="copyright" style="margin-top: 15px;">
+          &copy; <span class="text-bold text-uppercase">نظام إدارة المستشفيات</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
-		<script src="assets/js/login.js"></script>
-		<script>
-			jQuery(document).ready(function() {
-				Main.init();
-				Login.init();
-			});
-		</script>
-	
-	</body>
-	<!-- end: BODY -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+</body>
 </html>

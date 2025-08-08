@@ -125,11 +125,9 @@ if ($canManageSpecs && isset($_GET['del']) && isset($_GET['id'])) {
                 <ul class="menu">
                     <li><a href="#choose-disease" class="active"><i class="fa-solid fa-notes-medical"></i><span>اختيار نوع المرض</span><span class="ms-auto badge-soft">الآن</span></a></li>
                     <!-- حذفت رابط "تخصصات الأطباء" من القائمة للمريض -->
-                    <li><a href="my-appointments.php"><i class="fa-regular fa-calendar-check"></i><span>حجوزاتي</span></a></li>
-                    <li><a href="profile.php"><i class="fa-regular fa-id-badge"></i><span>ملفي الطبي</span></a></li>
-                    <li><a href="labs-results.php"><i class="fa-solid fa-vial"></i><span>نتائج الفحوصات</span></a></li>
-                    <li><a href="payments.php"><i class="fa-regular fa-credit-card"></i><span>المدفوعات</span></a></li>
-                    <li><a href="support.php"><i class="fa-regular fa-life-ring"></i><span>الدعم</span></a></li>
+                    <li><a href="appointment-history.php"><i class="fa-regular fa-calendar-check"></i><span>حجوزاتي</span></a></li>
+                    <li><a href="edit-profile.php"><i class="fa-regular fa-id-badge"></i><span>ملفي الطبي</span></a></li>
+                    <li><a href="view-medhistory.php"><i class="fa-solid fa-vial"></i><span>نتائج الفحوصات</span></a></li>
                     <li><a href="logout.php"><i class="fa-solid fa-right-from-bracket"></i><span>تسجيل الخروج</span></a></li>
                 </ul>
             </aside>
@@ -253,7 +251,6 @@ if ($canManageSpecs && isset($_GET['del']) && isset($_GET['id'])) {
                 </section>
                 <?php endif; ?>
 
-                <?php include('include/footer.php'); ?>
             </main>
         </div>
     </div>

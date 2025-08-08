@@ -397,6 +397,7 @@ INSERT INTO `users` (`id`, `fullName`, `address`, `city`, `gender`, `email`, `pa
 (8, 'عبود', 'حجه', 'حجه', 'ذكر', 'bdbd@gmail.com', '25f9e794323b453885f5181f1b624d0b', '2025-07-27 00:41:38', '2025-07-28 21:55:11');
 
 --
+
 -- Indexes for dumped tables
 --
 
