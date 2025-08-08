@@ -574,19 +574,8 @@ $inquiries_count = mysqli_num_rows(mysqli_query($con, "SELECT * FROM tblcontactu
             </div>
 
             <!-- الترحيب -->
-            <div class="welcome-section">
-                <h1><i class="fas fa-tachometer-alt me-3"></i>لوحة التحكم</h1>
-                <p class="mb-0">مرحباً بك في نظام إدارة المستشفى، هنا يمكنك إدارة كافة جوانب النظام</p>
-            </div>
-
-            <!-- الإحصائيات -->
-            <div class="stats-grid">
-                <div class="stat-card users">
-                    <i class="fas fa-users"></i>
-                    <h3><?php echo $users_count; ?></h3>
-                    <p>إجمالي المستخدمين</p>
-                </div>
-
+            
+          
                 <div class="stat-card doctors">
                     <i class="fas fa-user-md"></i>
                     <h3><?php echo $doctors_count; ?></h3>
