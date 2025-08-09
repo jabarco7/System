@@ -65,6 +65,7 @@ if ($stmtCount = $con->prepare("SELECT COUNT(*) FROM appointment WHERE userId = 
 }
 $totalPages = max(1, (int)ceil($totalRows / $perPage));
 
+
 /* بيانات الصفحة الحالية */
 $rows = [];
 $stmt = $con->prepare("
