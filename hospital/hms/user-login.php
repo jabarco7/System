@@ -17,7 +17,7 @@ if (isset($_POST['submit'])) {
         exit;
     }
 
-    // جلب المستخدم من قاعدة البيانات
+    // جلب المستخدم من قاعدة البيانات (بدون contactno لأنه غير موجود)
     $stmt = mysqli_prepare($con, "SELECT id, email, fullName, password FROM users WHERE email = ? LIMIT 1");
     mysqli_stmt_bind_param($stmt, 's', $email);
     mysqli_stmt_execute($stmt);
@@ -29,15 +29,15 @@ if (isset($_POST['submit'])) {
         $hashedFromDB = $row['password'];
         $loginOk = false;
 
-        // إذا كانت كلمة المرور مشفرة باستخدام password_hash
+        // password_hash()
         if (password_verify($password, $hashedFromDB)) {
             $loginOk = true;
         }
-        // إذا كانت مشفرة بـ MD5
+        // MD5
         elseif ($hashedFromDB === md5($password)) {
             $loginOk = true;
         }
-        // إذا كانت نص عادي (بدون تشفير)
+        // نص عادي
         elseif ($hashedFromDB === $password) {
             $loginOk = true;
         }
@@ -45,17 +45,56 @@ if (isset($_POST['submit'])) {
         if ($loginOk) {
             session_regenerate_id(true);
             $_SESSION['login'] = $email;
-            $_SESSION['id']    = $row['id'];
+            $_SESSION['id']    = (int)$row['id'];
             $_SESSION['patient_name'] = $row['fullName'] ?: $row['email'];
 
             // حفظ سجل الدخول (نجاح)
-            $pid    = $row['id'];
+            $pid    = (int)$row['id'];
             $uip    = $_SERVER['REMOTE_ADDR'] ?? '';
             $status = 1;
             $logStmt = mysqli_prepare($con, "INSERT INTO userlog (uid, username, userip, status) VALUES (?, ?, ?, ?)");
             mysqli_stmt_bind_param($logStmt, 'issi', $pid, $email, $uip, $status);
             mysqli_stmt_execute($logStmt);
             mysqli_stmt_close($logStmt);
+
+            /* =========================================================
+               إنشاء سجل مريض في tblpatient تلقائيًا إن لم يكن موجودًا
+               - يدعم وجود/عدم وجود عمود UserID في tblpatient
+            ========================================================== */
+            $uid     = (int)$row['id'];
+            $pname   = mysqli_real_escape_string($con, $row['fullName'] ?? '');
+            $pemail  = mysqli_real_escape_string($con, $row['email'] ?? '');
+            $pcont   = ''; // لا يوجد رقم هاتف في جدول users لديك
+
+            // هل جدول tblpatient يحتوي عمود UserID؟
+            $hasUserIdCol = false;
+            if ($colRes = mysqli_query($con, "SHOW COLUMNS FROM tblpatient LIKE 'UserID'")) {
+                $hasUserIdCol = (mysqli_num_rows($colRes) > 0);
+                mysqli_free_result($colRes);
+            }
+
+            if ($hasUserIdCol) {
+                // فحص بالـ UserID لمنع التكرار
+                $existsRes = mysqli_query($con, "SELECT 1 FROM tblpatient WHERE UserID = {$uid} LIMIT 1");
+                if ($existsRes && mysqli_num_rows($existsRes) === 0) {
+                    mysqli_query($con, "
+                        INSERT INTO tblpatient (UserID, PatientName, PatientEmail, PatientContno, CreationDate)
+                        VALUES ({$uid}, '{$pname}', '{$pemail}', '{$pcont}', NOW())
+                    ");
+                }
+                if ($existsRes) mysqli_free_result($existsRes);
+            } else {
+                // بدون UserID: نتحقق بالبريد لمنع التكرار
+                $existsRes = mysqli_query($con, "SELECT 1 FROM tblpatient WHERE PatientEmail = '{$pemail}' LIMIT 1");
+                if ($existsRes && mysqli_num_rows($existsRes) === 0) {
+                    mysqli_query($con, "
+                        INSERT INTO tblpatient (PatientName, PatientEmail, PatientContno, CreationDate)
+                        VALUES ('{$pname}', '{$pemail}', '{$pcont}', NOW())
+                    ");
+                }
+                if ($existsRes) mysqli_free_result($existsRes);
+            }
+            /* ==================== نهاية الإنشاء التلقائي ==================== */
 
             header("Location: dashboard.php");
             exit;
@@ -89,8 +128,6 @@ if (isset($_POST['submit'])) {
     }
     mysqli_stmt_close($stmt);
 }
-?>
-
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">

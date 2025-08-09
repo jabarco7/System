@@ -155,12 +155,36 @@ $sql = mysqli_query(
         body {
             font-family: 'Tajawal', sans-serif;
             background: #f0f5f9;
-            padding-top: 60px;
+
+            padding-top: var(--header-h);
+
+            margin-top: 80px;
+            padding-top: 80px;
+        }
+
+        .navbar-fixed-top,
+        .app-header {
+            z-index: 1030;
+            /* أعلى من المحتوى */
         }
 
         .main-content {
             margin-right: 20px;
             padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .sidebar,
+        #sidebar,
+        .app-sidebar {
+            position: sticky;
+            top: calc(var(--header-h) + 10px);
+            /* مسافة بسيطة تحت الهيدر */
+        }
+
+        .page-header {
+            margin-top: 6px;
         }
 
         .page-header {
@@ -178,6 +202,15 @@ $sql = mysqli_query(
             margin-bottom: 25px;
             background: #fff;
         }
+
+        /* === أحجام موحّدة للهيدر والسايدبار === */
+        :root {
+            --header-h: 72px;
+            /* عدّلها حسب ارتفاع الهيدر الحقيقي عندك */
+            --sidebar-w: 260px;
+            /* إن كان لك سايدبار ثابت */
+        }
+
 
         .card-header {
             background: #fff;
@@ -269,6 +302,42 @@ $sql = mysqli_query(
             height: 36px;
             width: 100%;
         }
+
+        /* منطقة زر المسؤول والقائمة */
+        #adminArea {
+            position: relative;
+            z-index: 2001;
+        }
+
+        /* أعلى من الهيدر */
+        #adminMenu {
+            position: absolute;
+            top: calc(100% + 8px);
+            inset-inline-end: 0;
+            /* يدعم RTL/LTR */
+            min-width: 220px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, .15);
+            border: 1px solid #e9ecef;
+            display: none;
+        }
+
+        #adminMenu.show {
+            display: block;
+        }
+
+        #adminMenu a {
+            display: block;
+            padding: 10px 12px;
+            text-decoration: none;
+            color: #22313f;
+        }
+
+        #adminMenu a:hover {
+            background: #f6f9fc;
+        }
+
 
         .search-container i {
             position: absolute;
@@ -503,6 +572,30 @@ $sql = mysqli_query(
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        // افتح/سكر قائمة المسؤول
+        (function() {
+            const toggle = document.getElementById('adminToggle');
+            const menu = document.getElementById('adminMenu');
+            const area = document.getElementById('adminArea');
+            if (!toggle || !menu || !area) return;
+
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                menu.classList.toggle('show');
+            });
+
+            // اغلاق عند الضغط خارج القائمة
+            document.addEventListener('click', function(e) {
+                if (!area.contains(e.target)) menu.classList.remove('show');
+            });
+
+            // اغلاق بـ Esc
+            window.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') menu.classList.remove('show');
+            });
+        })();
+
+
         // إخفاء تنبيه الصفحة بعد 4 ثوان
         setTimeout(() => {
             const alertEl = document.querySelector('.alert-message');
