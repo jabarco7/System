@@ -155,13 +155,27 @@ $sql = mysqli_query(
         body {
             font-family: 'Tajawal', sans-serif;
             background: #f0f5f9;
-            padding-top: 60px;
-        }
+            
+  padding-top: var(--header-h);
 
+            margin-top: 80px;
+            padding-top: 80px;
+        }
+.navbar-fixed-top,
+.app-header{
+  z-index: 1030; /* أعلى من المحتوى */
+}
         .main-content {
             margin-right: 20px;
             padding: 20px;
+             position: relative;
+  z-index: 1;
         }
+        .sidebar, #sidebar, .app-sidebar{
+  position: sticky;
+  top: calc(var(--header-h) + 10px); /* مسافة بسيطة تحت الهيدر */
+}
+.page-header{ margin-top: 6px; }
 
         .page-header {
             background: linear-gradient(90deg, #3498db, #4aa8e0);
@@ -178,6 +192,12 @@ $sql = mysqli_query(
             margin-bottom: 25px;
             background: #fff;
         }
+        /* === أحجام موحّدة للهيدر والسايدبار === */
+:root{
+  --header-h: 72px;      /* عدّلها حسب ارتفاع الهيدر الحقيقي عندك */
+  --sidebar-w: 260px;    /* إن كان لك سايدبار ثابت */
+}
+
 
         .card-header {
             background: #fff;
@@ -269,6 +289,28 @@ $sql = mysqli_query(
             height: 36px;
             width: 100%;
         }
+        /* منطقة زر المسؤول والقائمة */
+#adminArea{ position: relative; z-index: 2001; } /* أعلى من الهيدر */
+#adminMenu{
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-end: 0;              /* يدعم RTL/LTR */
+  min-width: 220px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.15);
+  border: 1px solid #e9ecef;
+  display: none;
+}
+#adminMenu.show{ display: block; }
+#adminMenu a{
+  display: block;
+  padding: 10px 12px;
+  text-decoration: none;
+  color: #22313f;
+}
+#adminMenu a:hover{ background: #f6f9fc; }
+
 
         .search-container i {
             position: absolute;
