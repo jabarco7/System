@@ -2,20 +2,20 @@
 session_start();
 error_reporting(0);
 include('include/config.php');
-if(strlen($_SESSION['id']==0)) {
- header('location:logout.php');
-  } else{
-if(isset($_GET['cancel']))
-		  {
-		          mysqli_query($con,"update appointment set userStatus='0' where id = '".$_GET['id']."'");
-                  $_SESSION['msg']="تم الغاء موعدك!!";
-		  }
+if (strlen($_SESSION['id'] == 0)) {
+	header('location:logout.php');
+} else {
+	if (isset($_GET['cancel'])) {
+		mysqli_query($con, "update appointment set userStatus='0' where id = '" . $_GET['id'] . "'");
+		$_SESSION['msg'] = "تم الغاء موعدك!!";
+	}
 ?>
-<!DOCTYPE html>
-<html lang="en">
+	<!DOCTYPE html>
+	<html lang="en">
+
 	<head>
 		<title>المستخدم | سجل المواعيد</title>
-		
+
 		<link href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
 		<link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
@@ -31,22 +31,23 @@ if(isset($_GET['cancel']))
 		<link rel="stylesheet" href="assets/css/plugins.css">
 		<link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
 	</head>
-	<body>
-		<div id="app">		
- <?php include('include/sidebar.php');?> 
-			<div class="app-content">
-				
 
-					<?php include('include/header.php');?>
+	<body>
+		<div id="app">
+			<?php include('include/sidebar.php'); ?>
+			<div class="app-content">
+
+
+				<?php include('include/header.php'); ?>
 				<!-- end: TOP NAVBAR -->
-				<div class="main-content" >
+				<div class="main-content">
 					<div class="wrap-content container" id="container">
 						<!-- start: PAGE TITLE -->
 						<section id="page-title">
 							<div class="row">
 								<div class="col-sm-8">
-									<h1 class="mainTitle">المستخدم  | سجل المواعيد</h1>
-																	</div>
+									<h1 class="mainTitle">المستخدم | سجل المواعيد</h1>
+								</div>
 								<ol class="breadcrumb">
 									<li>
 										<span>المستخدم </span>
@@ -60,13 +61,13 @@ if(isset($_GET['cancel']))
 						<!-- end: PAGE TITLE -->
 						<!-- start: BASIC EXAMPLE -->
 						<div class="container-fluid container-fullw bg-white">
-						
 
-									<div class="row">
+
+							<div class="row">
 								<div class="col-md-12">
-									
-									<p style="color:red; - appointment-history.php:68"><?php echo htmlentities($_SESSION['msg']);?>
-								<?php echo htmlentities($_SESSION['msg - appointment-history.php:69']="");?></p>	
+
+									<p style="color:red; - appointment-history.php:68"><?php echo htmlentities($_SESSION['msg']); ?>
+										<?php echo htmlentities($_SESSION['msg - appointment-history.php:69'] = ""); ?></p>
 									<table class="table table-hover" id="sample-table-1">
 										<thead>
 											<tr>
@@ -75,109 +76,105 @@ if(isset($_GET['cancel']))
 												<th>التخصص</th>
 												<th>رسوم الاستشارة</th>
 												<th>وقت/تاريخ التعيين </th>
-												<th>تاريخ إنشاء الموعد  </th>
+												<th>تاريخ إنشاء الموعد </th>
 												<th>الوضع الحالي</th>
 												<th>الإجراء</th>
-												
+
 											</tr>
 										</thead>
 										<tbody>
-<?php
-$sql=mysqli_query($con,"select doctors.doctorName as docname,appointment.*  from appointment join doctors on doctors.id=appointment.doctorId where appointment.userId='".$_SESSION['id']."'");
-$cnt=1;
-while($row=mysqli_fetch_array($sql))
-{
-?>
+											<?php
+											$sql = mysqli_query($con, "select doctors.doctorName as docname,appointment.*  from appointment join doctors on doctors.id=appointment.doctorId where appointment.userId='" . $_SESSION['id'] . "'");
+											$cnt = 1;
+											while ($row = mysqli_fetch_array($sql)) {
+											?>
 
-											<tr>
-												<td class="center - appointment-history.php:93"><?php echo $cnt;?>.</td>
-												<td class="hiddenxs - appointment-history.php:94"><?php echo $row['docname'];?></td>
-												<td><?php echo $row['doctorSpecialization - appointment-history.php:95'];?></td>
-												<td><?php echo $row['consultancyFees - appointment-history.php:96'];?></td>
-												<td><?php echo $row['appointmentDate - appointment-history.php:97'];?> / <?php echo
-												 $row['appointmentTime'];?>
-												</td>
-												<td><?php echo $row['postingDate - appointment-history.php:100'];?></td>
-												<td>
-<?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
-{
-	echo "نشط - appointment-history.php:104";
-}
-if(($row['userStatus']==0) && ($row['doctorStatus']==1))  
-{
-	echo "إالغاء بواسطتك - appointment-history.php:108";
-}
+												<tr>
+													<td class="center - appointment-history.php:93"><?php echo $cnt; ?>.</td>
+													<td class="hiddenxs - appointment-history.php:94"><?php echo $row['docname']; ?></td>
+													<td><?php echo $row['doctorSpecialization - appointment-history.php:95']; ?></td>
+													<td><?php echo $row['consultancyFees - appointment-history.php:96']; ?></td>
+													<td><?php echo $row['appointmentDate - appointment-history.php:97']; ?> / <?php echo
+																																$row['appointmentTime']; ?>
+													</td>
+													<td><?php echo $row['postingDate - appointment-history.php:100']; ?></td>
+													<td>
+														<?php if (($row['userStatus'] == 1) && ($row['doctorStatus'] == 1)) {
+															echo "نشط - appointment-history.php:104";
+														}
+														if (($row['userStatus'] == 0) && ($row['doctorStatus'] == 1)) {
+															echo "إالغاء بواسطتك - appointment-history.php:108";
+														}
 
-if(($row['userStatus']==1) && ($row['doctorStatus']==0))  
-{
-	echo "إالغاء من قبل الطبيب - appointment-history.php:113";
-}
+														if (($row['userStatus'] == 1) && ($row['doctorStatus'] == 0)) {
+															echo "إالغاء من قبل الطبيب - appointment-history.php:113";
+														}
 
 
 
-												?></td>
-												<td >
-												<div class="visible-md visible-lg hidden-sm hidden-xs">
-							<?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
-{ ?>
+														?></td>
+													<td>
+														<div class="visible-md visible-lg hidden-sm hidden-xs">
+															<?php if (($row['userStatus'] == 1) && ($row['doctorStatus'] == 1)) { ?>
 
-													
-	<a href="?id=<?php echo $row['id']?>&cancel=update - appointment-history.php:125" onClick="return confirm('Are you sure you want to cancel this appointment ?')"class="btn btn-primary btn-xs" title="Cancel Appointment" tooltip-placement="top" tooltip="Remove">الغاء</a>
-	<?php } else {
 
-		echo "تم الإلغاء - appointment-history.php:128";
-		} ?>
-												</div>
-												<div class="visible-xs visible-sm hidden-md hidden-lg">
-													<div class="btn-group" dropdown is-open="status.isopen">
-														<button type="button" class="btn btn-primary btn-o btn-sm dropdown-toggle" dropdown-toggle>
-															<i class="fa fa-cog"></i>&nbsp;<span class="caret"></span>
-														</button>
-														<ul class="dropdown-menu pull-right dropdown-light" role="menu">
-															<li>
-																<a href="#">
-																	تعديل
-																</a>
-															</li>
-															<li>
-																<a href="#">
-																	
-																</a>مشاركة
-															</li>
-															<li>
-																<a href="#">
-																	حذف
-																</a>
-															</li>
-														</ul>
-													</div>
-												</div></td>
-											</tr>
-											
-											<?php 
-$cnt=$cnt+1;
-											 }?>
-											
-											
+																<a href="?id=<?php echo $row['id'] ?>&cancel=update - appointment-history.php:125" onClick="return confirm('Are you sure you want to cancel this appointment ?')" class="btn btn-primary btn-xs" title="Cancel Appointment" tooltip-placement="top" tooltip="Remove">الغاء</a>
+															<?php } else {
+
+																echo "تم الإلغاء - appointment-history.php:128";
+															} ?>
+														</div>
+														<div class="visible-xs visible-sm hidden-md hidden-lg">
+															<div class="btn-group" dropdown is-open="status.isopen">
+																<button type="button" class="btn btn-primary btn-o btn-sm dropdown-toggle" dropdown-toggle>
+																	<i class="fa fa-cog"></i>&nbsp;<span class="caret"></span>
+																</button>
+																<ul class="dropdown-menu pull-right dropdown-light" role="menu">
+																	<li>
+																		<a href="#">
+																			تعديل
+																		</a>
+																	</li>
+																	<li>
+																		<a href="#">
+
+																		</a>مشاركة
+																	</li>
+																	<li>
+																		<a href="#">
+																			حذف
+																		</a>
+																	</li>
+																</ul>
+															</div>
+														</div>
+													</td>
+												</tr>
+
+											<?php
+												$cnt = $cnt + 1;
+											} ?>
+
+
 										</tbody>
 									</table>
 								</div>
 							</div>
-								</div>
-						
+						</div>
+
 						<!-- end: BASIC EXAMPLE -->
 						<!-- end: SELECT BOXES -->
-						
+
 					</div>
 				</div>
 			</div>
 			<!-- start: FOOTER -->
-	<?php include('include/footer.php');?>
+			<?php include('include/footer.php'); ?>
 			<!-- end: FOOTER -->
-		
+
 			<!-- start: SETTINGS -->
-	<?php include('include/setting.php');?>
-			
+			<?php include('include/setting.php'); ?>
+
 			<!-- end: SETTINGS -->
 		</div>
 		<!-- start: MAIN JAVASCRIPTS -->
@@ -211,5 +208,6 @@ $cnt=$cnt+1;
 		<!-- end: JavaScript Event Handlers for this page -->
 		<!-- end: CLIP-TWO JAVASCRIPTS -->
 	</body>
-</html>
+
+	</html>
 <?php } ?>

@@ -93,7 +93,6 @@ elseif (isset($_POST['preview'])) {
 			margin: 20px auto;
 			max-width: 900px;
 			text-align: center
-			
 		}
 
 		.container-narrow {
@@ -306,54 +305,54 @@ elseif (isset($_POST['preview'])) {
 					</div>
 				</div>
 			<?php endif; ?>
-		
 
-	<script src="vendor/jquery/jquery.min.js"></script>
-	<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-	<script src="vendor/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
-	<script src="vendor/bootstrap-timepicker/bootstrap-timepicker.min.js"></script>
-	<script>
-		jQuery(function() {
-			// لو رجعت من زر "تعديل البيانات"، رجّع القيم للحقول (fallback بسيط)
-			<?php if (isset($_POST['edit'])): ?>
-				const prev = <?php
-								// نبني كائن JS بالقيم السابقة
-								$data = [
-									'Doctorspecialization' => $_POST['Doctorspecialization'] ?? '',
-									'doctor'               => $_POST['doctor'] ?? '',
-									'fees'                 => $_POST['fees'] ?? '',
-									'appdate'              => $_POST['appdate'] ?? '',
-									'apptime'              => $_POST['apptime'] ?? '',
-								];
-								echo json_encode($data, JSON_UNESCAPED_UNICODE);
-								?>;
-				// نحاول تعبئة الحقول بعد ما تُبنى الصفحة (ممكن ما تنجح 100% لأن الأطباء يُجلبون AJAX)
-				setTimeout(function() {
-					$('select[name="Doctorspecialization"]').val(prev.Doctorspecialization).trigger('change');
-					// بعد ما يتعبأ الأطباء عبر AJAX، نختار الطبيب والرسوم
-					setTimeout(function() {
-						$('#doctor').val(prev.doctor).trigger('change');
+
+			<script src="vendor/jquery/jquery.min.js"></script>
+			<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+			<script src="vendor/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
+			<script src="vendor/bootstrap-timepicker/bootstrap-timepicker.min.js"></script>
+			<script>
+				jQuery(function() {
+					// لو رجعت من زر "تعديل البيانات"، رجّع القيم للحقول (fallback بسيط)
+					<?php if (isset($_POST['edit'])): ?>
+						const prev = <?php
+										// نبني كائن JS بالقيم السابقة
+										$data = [
+											'Doctorspecialization' => $_POST['Doctorspecialization'] ?? '',
+											'doctor'               => $_POST['doctor'] ?? '',
+											'fees'                 => $_POST['fees'] ?? '',
+											'appdate'              => $_POST['appdate'] ?? '',
+											'apptime'              => $_POST['apptime'] ?? '',
+										];
+										echo json_encode($data, JSON_UNESCAPED_UNICODE);
+										?>;
+						// نحاول تعبئة الحقول بعد ما تُبنى الصفحة (ممكن ما تنجح 100% لأن الأطباء يُجلبون AJAX)
 						setTimeout(function() {
-							$('#fees').val(prev.fees);
+							$('select[name="Doctorspecialization"]').val(prev.Doctorspecialization).trigger('change');
+							// بعد ما يتعبأ الأطباء عبر AJAX، نختار الطبيب والرسوم
+							setTimeout(function() {
+								$('#doctor').val(prev.doctor).trigger('change');
+								setTimeout(function() {
+									$('#fees').val(prev.fees);
+								}, 300);
+							}, 400);
+							$('input[name="appdate"]').val(prev.appdate);
+							$('input[name="apptime"]').val(prev.apptime);
 						}, 300);
-					}, 400);
-					$('input[name="appdate"]').val(prev.appdate);
-					$('input[name="apptime"]').val(prev.apptime);
-				}, 300);
-			<?php endif; ?>
+					<?php endif; ?>
 
-			$('.datepicker').datepicker({
-				format: 'yyyy-mm-dd',
-				startDate: new Date(),
-				autoclose: true
-			});
-			$('#timepicker1').timepicker({
-				minuteStep: 5,
-				showMeridian: true,
-				defaultTime: false
-			});
-		});
-	</script>
+					$('.datepicker').datepicker({
+						format: 'yyyy-mm-dd',
+						startDate: new Date(),
+						autoclose: true
+					});
+					$('#timepicker1').timepicker({
+						minuteStep: 5,
+						showMeridian: true,
+						defaultTime: false
+					});
+				});
+			</script>
 </body>
 
 </html>
