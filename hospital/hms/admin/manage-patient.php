@@ -434,7 +434,7 @@ if (strlen($_SESSION['id']) == 0) {
                                                     <td><?php echo htmlspecialchars($row['CreationDate']); ?></td>
                                                     <td><?php echo htmlspecialchars($row['UpdationDate']); ?></td>
                                                     <td class="text-center">
-                                                        <a href="viewpatient.php?viewid=<?php echo (int)$row['ID']; ?>" class="action-btn btn-view" target="_blank">
+                                                        <a href="view-patient.php?viewid=<?php echo (int)$row['ID']; ?>" class="action-btn btn-view" target="_blank">
                                                             <i class="fas fa-eye me-1"></i>عرض
                                                         </a>
                                                     </td>

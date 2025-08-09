@@ -2,202 +2,221 @@
 session_start();
 error_reporting(0);
 include('include/config.php');
-if (strlen($_SESSION['id'] == 0)) {
-	header('location:logout.php');
+
+if (strlen($_SESSION['id']) == 0) {
+    header('location:logout.php');
+    exit;
 } else {
-	if (isset($_POST['submit'])) {
 
-		$vid = $_GET['viewid'];
-		$bp = $_POST['bp'];
-		$bs = $_POST['bs'];
-		$weight = $_POST['weight'];
-		$temp = $_POST['temp'];
-		$pres = $_POST['pres'];
+    // إضافة التاريخ الطبي
+    if (isset($_POST['submit'])) {
+        $vid    = isset($_GET['viewid']) ? intval($_GET['viewid']) : 0;
+        $bp     = trim($_POST['bp'] ?? '');
+        $bs     = trim($_POST['bs'] ?? '');
+        $weight = trim($_POST['weight'] ?? '');
+        $temp   = trim($_POST['temp'] ?? '');
+        $pres   = trim($_POST['pres'] ?? '');
 
-
-		$query .= mysqli_query($con, "insert   tblmedicalhistory(PatientID,BloodPressure,BloodSugar,Weight,Temperature,MedicalPres)value('$vid','$bp','$bs','$weight','$temp','$pres')");
-		if ($query) {
-			echo '<script>alert("تمت إضافة التاريخ الطبي.")</script> - view-patient.php:20';
-			echo "<script>window.location.href ='managepatient.php'</script> - view-patient.php:21";
-		} else {
-			echo '<script>alert("حدث خطأ ما. يُرجى المحاولة مرة أخرى.")</script> - view-patient.php:23';
-		}
-	}
-
+        if ($vid > 0) {
+            $query = mysqli_query($con, "INSERT INTO tblmedicalhistory
+                (PatientID,BloodPressure,BloodSugar,Weight,Temperature,MedicalPres)
+                VALUES ('$vid','$bp','$bs','$weight','$temp','$pres')");
+            if ($query) {
+                echo '<script>alert("تمت إضافة التاريخ الطبي.")</script>';
+                echo "<script>window.location.href='manage-patient.php'</script>";
+                exit;
+            } else {
+                echo '<script>alert("حدث خطأ ما. يُرجى المحاولة مرة أخرى.")</script>';
+            }
+        }
+    }
 ?>
-	<!DOCTYPE html>
-	<html lang="en">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <title>المسؤول | عرض تفاصيل المريض</title>
 
-	<head>
-		<title>المسؤول | عرض تفاصيل المريض</title>
+    <link href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="vendor/themify-icons/themify-icons.min.css">
+    <link href="vendor/animate.css/animate.min.css" rel="stylesheet" media="screen">
+    <link href="vendor/perfect-scrollbar/perfect-scrollbar.min.css" rel="stylesheet" media="screen">
+    <link href="vendor/switchery/switchery.min.css" rel="stylesheet" media="screen">
+    <link href="vendor/bootstrap-touchspin/jquery.bootstrap-touchspin.min.css" rel="stylesheet" media="screen">
+    <link href="vendor/select2/select2.min.css" rel="stylesheet" media="screen">
+    <link href="vendor/bootstrap-datepicker/bootstrap-datepicker3.standalone.min.css" rel="stylesheet" media="screen">
+    <link href="vendor/bootstrap-timepicker/bootstrap-timepicker.min.css" rel="stylesheet" media="screen">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/plugins.css">
+    <link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
 
-		<link href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic" rel="stylesheet" type="text/css" />
-		<link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
-		<link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
-		<link rel="stylesheet" href="vendor/themify-icons/themify-icons.min.css">
-		<link href="vendor/animate.css/animate.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/perfect-scrollbar/perfect-scrollbar.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/switchery/switchery.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-touchspin/jquery.bootstrap-touchspin.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/select2/select2.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-datepicker/bootstrap-datepicker3.standalone.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-timepicker/bootstrap-timepicker.min.css" rel="stylesheet" media="screen">
-		<link rel="stylesheet" href="assets/css/styles.css">
-		<link rel="stylesheet" href="assets/css/plugins.css">
-		<link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
-	</head>
+    <!-- تعديلات RTL خفيفة للسلايدبار والجداول فقط -->
+    <style>
+      /* اجعل السلايدبار على اليمين والمحتوى يأخذ مسافة من اليمين */
+      body, html { direction: rtl; }
+      .sidebar { right: 0 !important; left: auto !important; }
+      .sidebar ~ .app-content { margin-right: 260px; margin-left: 0; } /* عدّل الرقم لو عرض سلايدبارك مختلف */
+      @media (max-width: 991.98px){
+        .sidebar ~ .app-content { margin-right: 0; }
+      }
 
-	<body>
-		<div id="app">
-			<?php include('include/sidebar.php'); ?>
-			<div class="app-content">
-				<?php include('include/header.php'); ?>
-				<div class="main-content">
-					<div class="wrap-content container" id="container">
-						<!-- start: PAGE TITLE -->
-						<section id="page-title">
-							<div class="row">
-								<div class="col-sm-8">
-									<h1 class="mainTitle">المسؤول | عرض تفاصيل المريض</h1>
-								</div>
-								<ol class="breadcrumb">
-									<li>
-										<span>المسؤول</span>
-									</li>
-									<li class="active">
-										<span>عرض تفاصيل المريض</span>
-									</li>
-								</ol>
-							</div>
-						</section>
-						<div class="container-fluid container-fullw bg-white">
-							<div class="row">
-								<div class="col-md-12">
-									<h5 class="over-title margin-bottom-15">تفاصيل <span class="text-bold">المريض</span></h5>
-									<?php
-									$vid = $_GET['viewid'];
-									$ret = mysqli_query($con, "select * from tblpatient where ID='$vid'");
-									$cnt = 1;
-									while ($row = mysqli_fetch_array($ret)) {
-									?>
-										<table border="1" class="table table-bordered">
-											<tr align="center">
-												<td colspan="4" style="font-size:20px;color:blue">
-													تفاصيل المريض</td>
-											</tr>
+      /* الجداول RTL: العناوين والخلايا يمين، والأرقام وسط */
+      .rtl-table { direction: rtl; }
+      .rtl-table th, .rtl-table td { text-align: right; vertical-align: middle; }
+      .rtl-table td.num, .rtl-table th.num { text-align: center; }
+      /* صف العنوان الأزرق */
+      .rtl-table thead th { text-align: right; }
+      /* عنوان الجدول المدمج */
+      .table-title-row td { text-align:center !important; font-size:19px; color:#2d6cdf; font-weight:700; }
+    </style>
+</head>
 
-											<tr>
-												<th scope>اسم المريض</th>
-												<td><?php echo $row['PatientName - view-patient.php:91']; ?></td>
-												<th scope>البريد الالكتروني للمريض</th>
-												<td><?php echo $row['PatientEmail - view-patient.php:93']; ?></td>
-											</tr>
-											<tr>
-												<th scope>رقم هاتف المريض</th>
-												<td><?php echo $row['PatientContno - view-patient.php:97']; ?></td>
-												<th>عنوان المريض</th>
-												<td><?php echo $row['PatientAdd - view-patient.php:99']; ?></td>
-											</tr>
-											<tr>
-												<th>جنس المريض</th>
-												<td><?php echo $row['PatientGender - view-patient.php:103']; ?></td>
-												<th>عمر المريض</th>
-												<td><?php echo $row['PatientAge - view-patient.php:105']; ?></td>
-											</tr>
-											<tr>
+<body>
+<div id="app">
+    <?php include('include/sidebar.php'); ?>
+    <div class="app-content">
+        <?php include('include/header.php'); ?>
 
-												<th>التاريخ الطبي للمريض (إن وجد)</th>
-												<td><?php echo $row['PatientMedhis - view-patient.php:110']; ?></td>
-												<th>تاريخ تسجيل المريض</th>
-												<td><?php echo $row['CreationDate - view-patient.php:112']; ?></td>
-											</tr>
+        <div class="main-content">
+            <div class="wrap-content container" id="container">
+                <!-- start: PAGE TITLE -->
+                <section id="page-title">
+                    <div class="row">
+                        <div class="col-sm-8">
+                            <h1 class="mainTitle">المسؤول | عرض تفاصيل المريض</h1>
+                        </div>
+                       
+                    </div>
+                </section>
 
-										<?php } ?>
-										</table>
-										<?php
+                <div class="container-fluid container-fullw bg-white">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h5 class="over-title margin-bottom-15">تفاصيل <span class="text-bold">المريض</span></h5>
 
-										$ret = mysqli_query($con, "select * from tblmedicalhistory  where PatientID='$vid'");
+                            <?php
+                            $vid = isset($_GET['viewid']) ? intval($_GET['viewid']) : 0;
+                            $ret = mysqli_query($con, "SELECT * FROM tblpatient WHERE ID='$vid'");
+                            if ($ret && mysqli_num_rows($ret) > 0):
+                                while ($row = mysqli_fetch_assoc($ret)):
+                            ?>
+                            <table class="table table-bordered rtl-table">
+                                <tr class="table-title-row">
+                                    <td colspan="4">تفاصيل المريض</td>
+                                </tr>
+                                <tr>
+                                    <th>اسم المريض</th>
+                                    <td><?php echo htmlspecialchars($row['PatientName']); ?></td>
+                                    <th>البريد الالكتروني للمريض</th>
+                                    <td><?php echo htmlspecialchars($row['PatientEmail']); ?></td>
+                                </tr>
+                                <tr>
+                                    <th>رقم هاتف المريض</th>
+                                    <td><?php echo htmlspecialchars($row['PatientContno']); ?></td>
+                                    <th>عنوان المريض</th>
+                                    <td><?php echo htmlspecialchars($row['PatientAdd']); ?></td>
+                                </tr>
+                                <tr>
+                                    <th>جنس المريض</th>
+                                    <td><?php echo htmlspecialchars($row['PatientGender']); ?></td>
+                                    <th>عمر المريض</th>
+                                    <td><?php echo htmlspecialchars($row['PatientAge']); ?></td>
+                                </tr>
+                                <tr>
+                                    <th>التاريخ الطبي للمريض (إن وجد)</th>
+                                    <td><?php echo htmlspecialchars($row['PatientMedhis']); ?></td>
+                                    <th>تاريخ تسجيل المريض</th>
+                                    <td><?php echo htmlspecialchars($row['CreationDate']); ?></td>
+                                </tr>
+                            </table>
+                            <?php
+                                endwhile;
+                            else:
+                                echo '<div class="alert alert-warning">لا توجد بيانات لهذا المريض.</div>';
+                            endif;
+                            ?>
 
+                            <?php
+                            $hist = mysqli_query($con, "SELECT * FROM tblmedicalhistory WHERE PatientID='$vid' ORDER BY CreationDate DESC");
+                            ?>
+                            <table class="table table-bordered rtl-table">
+                                <tr class="table-title-row">
+                                    <td colspan="7">التاريخ الطبي</td>
+                                </tr>
+                                <thead>
+                                  <tr>
+                                      <th class="num">#</th>
+                                      <th>ضغط الدم</th>
+                                      <th>الوزن</th>
+                                      <th>سكر الدم</th>
+                                      <th>درجة حرارة الجسم</th>
+                                      <th>الوصفة الطبية</th>
+                                      <th>تاريخ الزيارة</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                <?php
+                                $cnt = 1;
+                                if ($hist && mysqli_num_rows($hist) > 0):
+                                    while ($row = mysqli_fetch_assoc($hist)):
+                                ?>
+                                  <tr>
+                                      <td class="num"><?php echo $cnt; ?></td>
+                                      <td><?php echo htmlspecialchars($row['BloodPressure']); ?></td>
+                                      <td><?php echo htmlspecialchars($row['Weight']); ?></td>
+                                      <td><?php echo htmlspecialchars($row['BloodSugar']); ?></td>
+                                      <td><?php echo htmlspecialchars($row['Temperature']); ?></td>
+                                      <td><?php echo htmlspecialchars($row['MedicalPres']); ?></td>
+                                      <td><?php echo htmlspecialchars($row['CreationDate']); ?></td>
+                                  </tr>
+                                <?php
+                                    $cnt++;
+                                    endwhile;
+                                else:
+                                    echo '<tr><td colspan="7" class="text-center text-muted">لا توجد سجلات تاريخ طبي بعد.</td></tr>';
+                                endif;
+                                ?>
+                                </tbody>
+                            </table>
 
+                        </div>
+                    </div>
+                </div><!-- /.container-fluid -->
+            </div>
+        </div>
+    </div><!-- /.app-content -->
+</div><!-- /#app -->
 
-										?>
-										<table id="datatable" class="table table-bordered dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
-											<tr align="center">
-												<th colspan="8">التاريخ الطبي</th>
-											</tr>
-											<tr>
-												<th>#</th>
-												<th>ضغط الدم</th>
-												<th>الوزن</th>
-												<th>سكر الدم</th>
-												<th>درجة حرارة الجسم</th>
-												<th>الوصفة الطبية</th>
-												<th>تاريخ الزيارة</th>
-											</tr>
-											<?php
-											while ($row = mysqli_fetch_array($ret)) {
-											?>
-												<tr>
-													<td><?php echo $cnt; ?></td>
-													<td><?php echo $row['BloodPressure - view-patient.php:142']; ?></td>
-													<td><?php echo $row['Weight - view-patient.php:143']; ?></td>
-													<td><?php echo $row['BloodSugar - view-patient.php:144']; ?></td>
-													<td><?php echo $row['Temperature - view-patient.php:145']; ?></td>
-													<td><?php echo $row['MedicalPres - view-patient.php:146']; ?></td>
-													<td><?php echo $row['CreationDate - view-patient.php:147']; ?></td>
-												</tr>
-											<?php $cnt = $cnt + 1;
-											} ?>
-										</table>
+<?php include('include/footer.php'); ?>
+<?php include('include/setting.php'); ?>
 
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		</div>
-		<!-- start: FOOTER -->
-		<?php include('include/footer.php'); ?>
-		<!-- end: FOOTER -->
+<!-- Scripts -->
+<script src="vendor/jquery/jquery.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+<script src="vendor/modernizr/modernizr.js"></script>
+<script src="vendor/jquery-cookie/jquery.cookie.js"></script>
+<script src="vendor/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+<script src="vendor/switchery/switchery.min.js"></script>
 
-		<!-- start: SETTINGS -->
-		<?php include('include/setting.php'); ?>
+<script src="vendor/maskedinput/jquery.maskedinput.min.js"></script>
+<script src="vendor/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js"></script>
+<script src="vendor/autosize/autosize.min.js"></script>
+<script src="vendor/selectFx/classie.js"></script>
+<script src="vendor/selectFx/selectFx.js"></script>
+<script src="vendor/select2/select2.min.js"></script>
+<script src="vendor/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
+<script src="vendor/bootstrap-timepicker/bootstrap-timepicker.min.js"></script>
 
-		<!-- end: SETTINGS -->
-		</div>
-		<!-- start: MAIN JAVASCRIPTS -->
-		<script src="vendor/jquery/jquery.min.js"></script>
-		<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-		<script src="vendor/modernizr/modernizr.js"></script>
-		<script src="vendor/jquery-cookie/jquery.cookie.js"></script>
-		<script src="vendor/perfect-scrollbar/perfect-scrollbar.min.js"></script>
-		<script src="vendor/switchery/switchery.min.js"></script>
-		<!-- end: MAIN JAVASCRIPTS -->
-		<!-- start: JAVASCRIPTS REQUIRED FOR THIS PAGE ONLY -->
-		<script src="vendor/maskedinput/jquery.maskedinput.min.js"></script>
-		<script src="vendor/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js"></script>
-		<script src="vendor/autosize/autosize.min.js"></script>
-		<script src="vendor/selectFx/classie.js"></script>
-		<script src="vendor/selectFx/selectFx.js"></script>
-		<script src="vendor/select2/select2.min.js"></script>
-		<script src="vendor/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
-		<script src="vendor/bootstrap-timepicker/bootstrap-timepicker.min.js"></script>
-		<!-- end: JAVASCRIPTS REQUIRED FOR THIS PAGE ONLY -->
-		<!-- start: CLIP-TWO JAVASCRIPTS -->
-		<script src="assets/js/main.js"></script>
-		<!-- start: JavaScript Event Handlers for this page -->
-		<script src="assets/js/form-elements.js"></script>
-		<script>
-			jQuery(document).ready(function() {
-				Main.init();
-				FormElements.init();
-			});
-		</script>
-		<!-- end: JavaScript Event Handlers for this page -->
-		<!-- end: CLIP-TWO JAVASCRIPTS -->
-	</body>
-
-	</html>
+<script src="assets/js/main.js"></script>
+<script src="assets/js/form-elements.js"></script>
+<script>
+jQuery(function() {
+    if (window.Main) Main.init();
+    if (window.FormElements) FormElements.init();
+});
+</script>
+</body>
+</html>
 <?php } ?>

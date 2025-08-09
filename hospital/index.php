@@ -28,6 +28,7 @@ if (isset($_POST['submit'])) {
 ?>
 <!doctype html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -39,310 +40,573 @@ if (isset($_POST['submit'])) {
     <link rel="stylesheet" href="assets/css/animate.css">
     <link rel="stylesheet" type="text/css" href="assets/css/style.css" />
 
-    <!-- تحسين قسم تسجيلات الدخول ليطابق ستايل لوحات الإدارة -->
+    <!-- هيدر غامق ظاهر من البداية + تأثير تمرير / وتنسيق قسم تسجيلات الدخول -->
     <style>
-    :root{--primary:#2f7bdc;--primary2:#4aa8e0;--text:#1f2430;--muted:#6c7a89;--bg:#f7faff}
-    /* هيدر داخلي (اختياري) */
-    .hero-bar{background:linear-gradient(90deg,var(--primary),var(--primary2));padding:28px 0;color:#fff;margin-bottom:10px}
-    .hero-bar h1{margin:0;font-weight:800;letter-spacing:.2px;font-size:26px}
+        :root {
+            --primary: #2f7bdc;
+            --primary2: #4aa8e0;
+            --text: #1f2430;
+            --muted: #6c7a89;
+            --bg: #f7faff;
+            --dark: #0f1420;
+        }
 
-    /* قسم تسجيلات الدخول */
-    .login-section{padding:50px 0 40px;background:var(--bg)}
-    .login-header{text-align:center;margin-bottom:26px}
-    .login-header h2{font-weight:800;color:#1f2430;margin:0 0 6px}
-    .login-header .sub{color:var(--muted)}
-    .login-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
-    @media (max-width:992px){.login-grid{grid-template-columns:1fr 1fr}}
-    @media (max-width:576px){.login-grid{grid-template-columns:1fr}}
+        /* ===== Header (Visible from start) ===== */
+        .smart-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(42, 76, 158, 0.96);
+            /* غير شفاف من البداية */
+            padding: 12px 0;
+            transition: background .3s, box-shadow .3s, padding .3s;
+            box-shadow: 0 4px 14px rgba(42, 76, 158, 0.96);
+        }
 
-    .login-card{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,.06);transition:.25s transform,.25s box-shadow}
-    .login-card:hover{transform:translateY(-4px);box-shadow:0 16px 34px rgba(47,123,220,.18)}
-    .login-media{height:170px;background:#eef4ff;display:flex;align-items:center;justify-content:center;overflow:hidden}
-    .login-media img{width:100%;height:100%;object-fit:cover}
-    .login-body{padding:16px 16px 18px}
-    .login-title{font-weight:800;font-size:18px;margin:0 0 6px;color:#273142}
-    .login-sub{color:#6c7a89;font-size:13px;margin-bottom:12px}
-    .btn-pill{border-radius:999px;padding:.55rem 1.05rem;font-weight:700;border:1px solid transparent;transition:.2s}
-    .btn-primary-grad{background:linear-gradient(90deg,var(--primary),var(--primary2));color:#fff;box-shadow:0 8px 18px rgba(47,123,220,.25)}
-    .btn-primary-grad:hover{filter:brightness(1.05)}
+        .smart-header.scrolled {
+           
+            padding: 8px 0;
+            box-shadow: 0 10px 22px rgba(0, 0, 0, .28);
+        }
+
+        .smart-header .wrap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+            font-weight: 800;
+            font-size: 22px;
+            text-decoration: none;
+        }
+
+        .brand img {
+            height: 36px
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            list-style: none;
+            margin: 0;
+        }
+
+        .nav-links a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color .2s, opacity .2s;
+            opacity: .95
+        }
+
+        .nav-links a:hover {
+            color: #8fd1ff;
+            opacity: 1
+        }
+
+        .btn-appoint {
+            background: linear-gradient(90deg, var(--primary), var(--primary2));
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 999px;
+            font-weight: 800;
+            box-shadow: 0 10px 20px rgba(47, 123, 220, .25);
+            transition: filter .2s;
+        }
+
+        .btn-appoint:hover {
+            filter: brightness(1.06)
+        }
+
+        /* Burger (mobile) */
+        .burger {
+            display: none;
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, .2);
+            background: transparent;
+            align-items: center;
+            justify-content: center
+        }
+
+        .burger span,
+        .burger span:before,
+        .burger span:after {
+            content: '';
+            display: block;
+            width: 18px;
+            height: 2px;
+            background: #fff;
+            position: relative;
+            transition: .25s
+        }
+
+        .burger span:before {
+            position: absolute;
+            top: -6px
+        }
+
+        .burger span:after {
+            position: absolute;
+            top: 6px
+        }
+
+        @media (max-width: 992px) {
+            .burger {
+                display: flex
+            }
+
+            .nav-col {
+                display: none
+            }
+
+            .nav-col.show {
+                display: block;
+                width: 100%
+            }
+
+            .nav-links {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 12px 0
+            }
+
+            .btn-appoint {
+                margin-top: 8px;
+                display: inline-block
+            }
+        }
+
+        /* مساحة أعلى الصفحة لأن الهيدر fixed */
+        .header-spacer {
+            height: 68px
+        }
+
+        /* ===== Slider ===== */
+        .slider-detail .carousel-caption h5 {
+            font-weight: 800
+        }
+
+        /* ===== Logins (Admin-like cards) ===== */
+        .login-section {
+            padding: 50px 0 40px;
+            background: var(--bg)
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 26px
+        }
+
+        .login-header h2 {
+            font-weight: 800;
+            color: #1f2430;
+            margin: 0 0 6px
+        }
+
+        .login-header .sub {
+            color: var(--muted)
+        }
+
+        .login-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 22px
+        }
+
+        /* صار عمودين بعد حذف المريض */
+        @media (max-width:768px) {
+            .login-grid {
+                grid-template-columns: 1fr
+            }
+        }
+
+        .login-card {
+            background: #fff;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, .06);
+            transition: .25s transform, .25s box-shadow
+        }
+
+        .login-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 34px rgba(47, 123, 220, .18)
+        }
+
+        .login-media {
+            height: 170px;
+            background: #eef4ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden
+        }
+
+        .login-media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover
+        }
+
+        .login-body {
+            padding: 16px 16px 18px
+        }
+
+        .login-title {
+            font-weight: 800;
+            font-size: 18px;
+            margin: 0 0 6px;
+            color: #273142
+        }
+
+        .login-sub {
+            color: #6c7a89;
+            font-size: 13px;
+            margin-bottom: 12px
+        }
+
+        .btn-pill {
+            border-radius: 999px;
+            padding: .55rem 1.05rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+            transition: .2s
+        }
+
+        .btn-primary-grad {
+            background: linear-gradient(90deg, var(--primary), var(--primary2));
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(47, 123, 220, .25)
+        }
+
+        .btn-primary-grad:hover {
+            filter: brightness(1.05)
+        }
     </style>
 </head>
 
 <body>
 
-<!-- ################# Header ####################### -->
-<header id="menu-jk">
-  <div id="nav-head" class="header-nav">
-    <div class="container">
-      <div class="row align-items-center">
-        <div class="col-lg-2 col-md-3 col-sm-12" style="color:#000;font-weight:bold;font-size:30px;margin-top:1%!important;">
-          مستشفى عمران
-          <a data-toggle="collapse" data-target="#menu" href="#menu">
-            <i class="fas d-block d-md-none small-menu fa-bars"></i>
-          </a>
+    <!-- ===== Header (Visible, still reacts on scroll) ===== -->
+    <header class="smart-header" id="smartHeader">
+        <div class="container">
+            <div class="wrap">
+                <a href="#" class="brand">
+                    <img src="assets/images/fav.jpg" alt="Logo">
+                    <span>مستشفى عمران</span>
+                </a>
+
+                <button class="burger d-lg-none" id="burgerBtn" aria-label="Toggle menu">
+                    <span></span>
+                </button>
+
+                <div class="nav-col">
+                    <ul class="nav-links">
+                        <li><a href="#">الرئيسية</a></li>
+                        <li><a href="#services">الخدمات</a></li>
+                        <li><a href="#about_us">من نحن</a></li>
+                        <li><a href="#gallery">معرض</a></li>
+                        <li><a href="#contact_us">اتصل بنا</a></li>
+                        <li><a href="#logins">تسجيلات الدخول</a></li>
+                        <li class="d-none d-lg-inline">
+                            <a class="btn-appoint" href="hms/user-login.php">حجز موعد</a>
+                        </li>
+                    </ul>
+                    <a class="btn-appoint d-lg-none" href="hms/user-login.php">حجز موعد</a>
+                </div>
+            </div>
         </div>
-        <div id="menu" class="col-lg-8 col-md-9 d-none d-md-block nav-item">
-          <ul>
-            <li><a href="#">الرئيسية</a></li>
-            <li><a href="#services">الخدمات</a></li>
-            <li><a href="#about_us">من نحن</a></li>
-            <li><a href="#gallery">معرض</a></li>
-            <li><a href="#contact_us">اتصل بنا</a></li>
-            <li><a href="#logins">تسجيلات الدخول</a></li>
-          </ul>
+    </header>
+    <div class="header-spacer"></div>
+
+    <!-- ===== Slider ===== -->
+    <div class="slider-detail">
+        <div id="carouselExampleIndicators" class="carousel slide" data-ride="carousel">
+            <ol class="carousel-indicators">
+                <li data-target="#carouselExampleIndicators" data-slide-to="0" class="active"></li>
+                <li data-target="#carouselExampleIndicators" data-slide-to="1"></li>
+            </ol>
+
+            <div class="carousel-inner">
+                <div class="carousel-item">
+                    <img class="d-block w-100" src="assets/images/slider/slider_2.jpg" alt="slide">
+                    <div class="carousel-cover"></div>
+                    <div class="carousel-caption vdg-cur d-none d-md-block">
+                        <h5 class="animated bounceInDown">نظام إدارة المستشفيات</h5>
+                    </div>
+                </div>
+
+                <div class="carousel-item active">
+                    <img class="d-block w-100" src="assets/images/slider/slider_3.jpg" alt="slide">
+                    <div class="carousel-cover"></div>
+                    <div class="carousel-caption vdg-cur d-none d-md-block">
+                        <h5 class="animated bounceInDown">نظام إدارة المستشفيات</h5>
+                    </div>
+                </div>
+            </div>
+
+            <a class="carousel-control-prev" href="#carouselExampleIndicators" role="button" data-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="sr-only">السابق</span>
+            </a>
+            <a class="carousel-control-next" href="#carouselExampleIndicators" role="button" data-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="sr-only">التالي</span>
+            </a>
         </div>
-        <div class="col-sm-2 d-none d-lg-block appoint">
-          <a class="btn btn-success" href="hms/user-login.php">حجز موعد</a>
-        </div>
-      </div>
-    </div>
-  </div>
-</header>
-
-<!-- (اختياري) شريط عنوان علوي بسيط قبل السلايدر -->
-<div class="hero-bar">
-  <div class="container">
-    <h1>نظام إدارة المستشفيات</h1>
-  </div>
-</div>
-
-<!-- ################# Slider ####################### -->
-<div class="slider-detail">
-  <div id="carouselExampleIndicators" class="carousel slide" data-ride="carousel">
-    <ol class="carousel-indicators">
-      <li data-target="#carouselExampleIndicators" data-slide-to="0" class="active"></li>
-      <li data-target="#carouselExampleIndicators" data-slide-to="1"></li>
-    </ol>
-
-    <div class="carousel-inner">
-      <div class="carousel-item">
-        <img class="d-block w-100" src="assets/images/slider/slider_2.jpg" alt="slide">
-        <div class="carousel-cover"></div>
-        <div class="carousel-caption vdg-cur d-none d-md-block">
-          <h5 class="animated bounceInDown">نظام إدارة المستشفيات</h5>
-        </div>
-      </div>
-
-      <div class="carousel-item active">
-        <img class="d-block w-100" src="assets/images/slider/slider_3.jpg" alt="slide">
-        <div class="carousel-cover"></div>
-        <div class="carousel-caption vdg-cur d-none d-md-block">
-          <h5 class="animated bounceInDown">نظام إدارة المستشفيات</h5>
-        </div>
-      </div>
-    </div>
-
-    <a class="carousel-control-prev" href="#carouselExampleIndicators" role="button" data-slide="prev">
-      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-      <span class="sr-only">السابق</span>
-    </a>
-    <a class="carousel-control-next" href="#carouselExampleIndicators" role="button" data-slide="next">
-      <span class="carousel-control-next-icon" aria-hidden="true"></span>
-      <span class="sr-only">التالي</span>
-    </a>
-  </div>
-</div>
-
-<!-- ################# Logins (موحّد) ####################### -->
-<section id="logins" class="login-section">
-  <div class="container">
-    <div class="login-header">
-      <h2>تسجيلات الدخول</h2>
-      <div class="sub">اختر نوع الحساب للمتابعة</div>
     </div>
 
-    <div class="login-grid">
-      <!-- المستخدم/المدير -->
-      <article class="login-card">
-        <div class="login-media">
-          <img src="assets/images/admin.jpg" alt="تسجيل دخول المستخدم">
-        </div>
-        <div class="login-body">
-          <h3 class="login-title">تسجيل دخول المستخدم</h3>
-          <div class="login-sub">الدخول إلى لوحة التحكم الإدارية</div>
-          <a href="hms/admin" class="btn btn-pill btn-primary-grad">ادخل الآن</a>
-        </div>
-      </article>
+    <!-- ===== Logins (Only Admin & Doctors) ===== -->
+    <section id="logins" class="login-section">
+        <div class="container">
+            <div class="login-header">
+                <h2>تسجيلات الدخول</h2>
+                <div class="sub">اختر نوع الحساب للمتابعة</div>
+            </div>
 
-      <!-- الأطباء -->
-      <article class="login-card">
-        <div class="login-media">
-          <img src="assets/images/doctor.jpg" alt="تسجيل دخول الأطباء">
-        </div>
-        <div class="login-body">
-          <h3 class="login-title">تسجيل دخول الأطباء</h3>
-          <div class="login-sub">إدارة المواعيد وملفات المرضى</div>
-          <a href="hms/doctor" class="btn btn-pill btn-primary-grad">ادخل الآن</a>
-        </div>
-      </article>
+            <div class="login-grid">
+                <!-- المستخدم/المدير -->
+                <article class="login-card">
+                    <div class="login-media">
+                        <img src="assets/images/admin.jpg" alt="تسجيل دخول المستخدم">
+                    </div>
+                    <div class="login-body">
+                        <h3 class="login-title">تسجيل دخول المستخدم</h3>
+                        <div class="login-sub">الدخول إلى لوحة التحكم الإدارية</div>
+                        <a href="hms/admin" class="btn btn-pill btn-primary-grad">ادخل الآن</a>
+                    </div>
+                </article>
 
-      <!-- المرضى -->
-      <article class="login-card">
-        <div class="login-media">
-          <img src="assets/images/patient.jpg" alt="تسجيل دخول المريض">
+                <!-- الأطباء -->
+                <article class="login-card">
+                    <div class="login-media">
+                        <img src="assets/images/doctor.jpg" alt="تسجيل دخول الأطباء">
+                    </div>
+                    <div class="login-body">
+                        <h3 class="login-title">تسجيل دخول الأطباء</h3>
+                        <div class="login-sub">إدارة المواعيد وملفات المرضى</div>
+                        <a href="hms/doctor" class="btn btn-pill btn-primary-grad">ادخل الآن</a>
+                    </div>
+                </article>
+            </div>
         </div>
-        <div class="login-body">
-          <h3 class="login-title">تسجيل دخول المريض</h3>
-          <div class="login-sub">حجز المواعيد ومتابعة الملف الطبي</div>
-          <a href="hms/user-login.php" class="btn btn-pill btn-primary-grad">ادخل الآن</a>
+    </section>
+
+    <!-- ===== Services ===== -->
+    <section id="services" class="key-features department">
+        <div class="container">
+            <div class="inner-title">
+                <h2>مميزاتنا الرئيسية</h2>
+                <p>ألق نظرة على بعض مميزاتنا الرئيسية</p>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-4 col-md-6">
+                    <div class="single-key"><i class="fas fa-heartbeat"></i>
+                        <h5>القلب</h5>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="single-key"><i class="fas fa-ribbon"></i>
+                        <h5>تقويم أسنان</h5>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="single-key"><i class="fab fa-monero"></i>
+                        <h5>طبيب الأسنان</h5>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="single-key"><i class="fas fa-capsules"></i>
+                        <h5>خط أنابيب مستشفى عمران</h5>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="single-key"><i class="fas fa-prescription-bottle-alt"></i>
+                        <h5>فريق مستشفى عمران</h5>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="single-key"><i class="far fa-thumbs-up"></i>
+                        <h5>علاجات عالية الجودة</h5>
+                    </div>
+                </div>
+            </div>
         </div>
-      </article>
+    </section>
+
+    <!-- ===== About Us ===== -->
+    <section id="about_us" class="about-us">
+        <div class="row no-margin">
+            <div class="col-sm-6 image-bg no-padding"></div>
+            <div class="col-sm-6 abut-yoiu">
+                <h3>نبذة عن مستشفانا</h3>
+                <?php
+                $ret = mysqli_query($con, "SELECT * FROM tblpage WHERE PageType='aboutus'");
+                while ($row = mysqli_fetch_assoc($ret)) {
+                    echo '<p>' . htmlspecialchars($row['PageDescription']) . '</p>';
+                }
+                ?>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Gallery ===== -->
+    <div id="gallery" class="gallery">
+        <div class="container">
+            <div class="inner-title">
+                <h2>معرض الصور الخاص بنا</h2>
+                <p>عرض معرض الصور الخاص بنا</p>
+            </div>
+
+            <div class="row">
+                <div class="gallery-filter d-none d-sm-block">
+                    <button class="btn btn-default filter-button" data-filter="all">كل</button>
+                    <button class="btn btn-default filter-button" data-filter="hdpe">الأسنان</button>
+                    <button class="btn btn-default filter-button" data-filter="sprinkle">القلب</button>
+                    <button class="btn btn-default filter-button" data-filter="spray">الأعصاب</button>
+                    <button class="btn btn-default filter-button" data-filter="irrigation">المختبر</button>
+                </div>
+
+                <div class="gallery_product col-lg-4 col-md-4 col-sm-4 col-xs-6 filter hdpe">
+                    <img src="assets/images/gallery/gallery_01.jpg" class="img-responsive">
+                </div>
+                <div class="gallery_product col-lg-4 col-md-4 col-sm-4 col-xs-6 filter sprinkle">
+                    <img src="assets/images/gallery/gallery_02.jpg" class="img-responsive">
+                </div>
+                <div class="gallery_product col-lg-4 col-md-4 col-sm-4 col-xs-6 filter hdpe">
+                    <img src="assets/images/gallery/gallery_03.jpg" class="img-responsive">
+                </div>
+                <div class="gallery_product col-lg-4 col-md-4 col-sm-4 col-xs-6 filter irrigation">
+                    <img src="assets/images/gallery/gallery_04.jpg" class="img-responsive">
+                </div>
+                <div class="gallery_product col-lg-4 col-md-4 col-sm-4 col-xs-6 filter spray">
+                    <img src="assets/images/gallery/gallery_05.jpg" class="img-responsive">
+                </div>
+                <div class="gallery_product col-lg-4 col-md-4 col-sm-4 col-xs-6 filter spray">
+                    <img src="assets/images/gallery/gallery_06.jpg" class="img-responsive">
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</section>
 
-<!-- ################# Services ####################### -->
-<section id="services" class="key-features department">
-  <div class="container">
-    <div class="inner-title">
-      <h2>مميزاتنا الرئيسية</h2>
-      <p>ألق نظرة على بعض مميزاتنا الرئيسية</p>
-    </div>
-
-    <div class="row">
-      <div class="col-lg-4 col-md-6"><div class="single-key"><i class="fas fa-heartbeat"></i><h5>القلب</h5></div></div>
-      <div class="col-lg-4 col-md-6"><div class="single-key"><i class="fas fa-ribbon"></i><h5>تقويم أسنان</h5></div></div>
-      <div class="col-lg-4 col-md-6"><div class="single-key"><i class="fab fa-monero"></i><h5>طبيب الأسنان</h5></div></div>
-      <div class="col-lg-4 col-md-6"><div class="single-key"><i class="fas fa-capsules"></i><h5>خط أنابيب مستشفى عمران</h5></div></div>
-      <div class="col-lg-4 col-md-6"><div class="single-key"><i class="fas fa-prescription-bottle-alt"></i><h5>فريق مستشفى عمران</h5></div></div>
-      <div class="col-lg-4 col-md-6"><div class="single-key"><i class="far fa-thumbs-up"></i><h5>علاجات عالية الجودة</h5></div></div>
-    </div>
-  </div>
-</section>
-
-<!-- ################# About Us ####################### -->
-<section id="about_us" class="about-us">
-  <div class="row no-margin">
-    <div class="col-sm-6 image-bg no-padding"></div>
-    <div class="col-sm-6 abut-yoiu">
-      <h3>نبذة عن مستشفانا</h3>
-      <?php
-      $ret = mysqli_query($con, "SELECT * FROM tblpage WHERE PageType='aboutus'");
-      while ($row = mysqli_fetch_assoc($ret)) {
-          echo '<p>'.htmlspecialchars($row['PageDescription']).'</p>';
-      }
-      ?>
-    </div>
-  </div>
-</section>
-
-<!-- ################# Gallery ####################### -->
-<div id="gallery" class="gallery">
-  <div class="container">
-    <div class="inner-title">
-      <h2>معرض الصور الخاص بنا</h2>
-      <p>عرض معرض الصور الخاص بنا</p>
-    </div>
-
-    <div class="row">
-      <div class="gallery-filter d-none d-sm-block">
-        <button class="btn btn-default filter-button" data-filter="all">كل</button>
-        <button class="btn btn-default filter-button" data-filter="hdpe">الأسنان</button>
-        <button class="btn btn-default filter-button" data-filter="sprinkle">القلب</button>
-        <button class="btn btn-default filter-button" data-filter="spray">الأعصاب</button>
-        <button class="btn btn-default filter-button" data-filter="irrigation">المختبر</button>
-      </div>
-
-      <div class="gallery_product col-lg-4 col-md-4 col-sm-4 col-xs-6 filter hdpe">
-        <img src="assets/images/gallery/gallery_01.jpg" class="img-responsive">
-      </div>
-      <div class="gallery_product col-lg-4 col-md-4 col-sm-4 col-xs-6 filter sprinkle">
-        <img src="assets/images/gallery/gallery_02.jpg" class="img-responsive">
-      </div>
-      <div class="gallery_product col-lg-4 col-md-4 col-sm-4 col-xs-6 filter hdpe">
-        <img src="assets/images/gallery/gallery_03.jpg" class="img-responsive">
-      </div>
-      <div class="gallery_product col-lg-4 col-md-4 col-sm-4 col-xs-6 filter irrigation">
-        <img src="assets/images/gallery/gallery_04.jpg" class="img-responsive">
-      </div>
-      <div class="gallery_product col-lg-4 col-md-4 col-sm-4 col-xs-6 filter spray">
-        <img src="assets/images/gallery/gallery_05.jpg" class="img-responsive">
-      </div>
-      <div class="gallery_product col-lg-4 col-md-4 col-sm-4 col-xs-6 filter spray">
-        <img src="assets/images/gallery/gallery_06.jpg" class="img-responsive">
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ################# Contact Us ####################### -->
-<section id="contact_us" class="contact-us-single">
-  <div class="row no-margin">
-    <div class="col-sm-12 cop-ck">
-      <form method="post">
-        <h2>نموذج الاتصال</h2>
-        <div class="row cf-ro">
-          <div class="col-sm-3"><label>ادخل الاسم:</label></div>
-          <div class="col-sm-8"><input type="text" placeholder="ادخل الاسم" name="fullname" class="form-control input-sm" required></div>
+    <!-- ===== Contact Us ===== -->
+    <section id="contact_us" class="contact-us-single">
+        <div class="row no-margin">
+            <div class="col-sm-12 cop-ck">
+                <form method="post">
+                    <h2>نموذج الاتصال</h2>
+                    <div class="row cf-ro">
+                        <div class="col-sm-3"><label>ادخل الاسم:</label></div>
+                        <div class="col-sm-8"><input type="text" placeholder="ادخل الاسم" name="fullname" class="form-control input-sm" required></div>
+                    </div>
+                    <div class="row cf-ro">
+                        <div class="col-sm-3"><label>ادخل البريد الإلكتروني:</label></div>
+                        <div class="col-sm-8"><input type="email" name="emailid" placeholder="ادخل البريد الإلكتروني" class="form-control input-sm" required></div>
+                    </div>
+                    <div class="row cf-ro">
+                        <div class="col-sm-3"><label>رقم الجوال:</label></div>
+                        <div class="col-sm-8"><input type="text" name="mobileno" placeholder="ادخل رقم الجوال" class="form-control input-sm" required></div>
+                    </div>
+                    <div class="row cf-ro">
+                        <div class="col-sm-3"><label>ادخل الرسالة:</label></div>
+                        <div class="col-sm-8">
+                            <textarea rows="5" placeholder="ادخل رسالتك" class="form-control input-sm" name="description" required></textarea>
+                        </div>
+                    </div>
+                    <div class="row cf-ro">
+                        <div class="col-sm-3"><label></label></div>
+                        <div class="col-sm-8">
+                            <button class="btn btn-success btn-sm" type="submit" name="submit">إرسال رسالة</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
-        <div class="row cf-ro">
-          <div class="col-sm-3"><label>ادخل البريد الإلكتروني:</label></div>
-          <div class="col-sm-8"><input type="email" name="emailid" placeholder="ادخل البريد الإلكتروني" class="form-control input-sm" required></div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 col-sm-12">
+                    <h2>روابط مفيدة</h2>
+                    <ul class="list-unstyled link-list">
+                        <li><a href="#about_us">من نحن</a><i class="fa fa-angle-right"></i></li>
+                        <li><a href="#services">خدمات</a><i class="fa fa-angle-right"></i></li>
+                        <li><a href="#logins">تسجيلات الدخول</a><i class="fa fa-angle-right"></i></li>
+                        <li><a href="#gallery">معرض</a><i class="fa fa-angle-right"></i></li>
+                        <li><a href="#contact_us">اتصل بنا</a><i class="fa fa-angle-right"></i></li>
+                    </ul>
+                </div>
+
+                <div class="col-md-6 col-sm-12 map-img">
+                    <h2>اتصل بنا</h2>
+                    <address class="md-margin-bottom-40">
+                        <?php
+                        $ret = mysqli_query($con, "SELECT * FROM tblpage WHERE PageType='contactus'");
+                        while ($row = mysqli_fetch_assoc($ret)) {
+                            echo nl2br(htmlspecialchars($row['PageDescription'])) . "<br>";
+                            echo "Phone: " . htmlspecialchars($row['MobileNumber']) . "<br>";
+                            echo 'Email: <a href="mailto:' . htmlspecialchars($row['Email']) . '">' . htmlspecialchars($row['Email']) . "</a><br>";
+                            echo "Timing: " . htmlspecialchars($row['OpenningTime']);
+                        }
+                        ?>
+                    </address>
+                </div>
+            </div>
         </div>
-        <div class="row cf-ro">
-          <div class="col-sm-3"><label>رقم الجوال:</label></div>
-          <div class="col-sm-8"><input type="text" name="mobileno" placeholder="ادخل رقم الجوال" class="form-control input-sm" required></div>
-        </div>
-        <div class="row cf-ro">
-          <div class="col-sm-3"><label>ادخل الرسالة:</label></div>
-          <div class="col-sm-8">
-            <textarea rows="5" placeholder="ادخل رسالتك" class="form-control input-sm" name="description" required></textarea>
-          </div>
-        </div>
-        <div class="row cf-ro">
-          <div class="col-sm-3"><label></label></div>
-          <div class="col-sm-8">
-            <button class="btn btn-success btn-sm" type="submit" name="submit">إرسال رسالة</button>
-          </div>
-        </div>
-      </form>
+    </footer>
+
+    <div class="copy">
+        <div class="container">نظام إدارة المستشفيات</div>
     </div>
-  </div>
-</section>
 
-<!-- ################# Footer ####################### -->
-<footer class="footer">
-  <div class="container">
-    <div class="row">
-      <div class="col-md-6 col-sm-12">
-        <h2>روابط مفيدة</h2>
-        <ul class="list-unstyled link-list">
-          <li><a href="#about_us">من نحن</a><i class="fa fa-angle-right"></i></li>
-          <li><a href="#services">خدمات</a><i class="fa fa-angle-right"></i></li>
-          <li><a href="#logins">تسجيلات الدخول</a><i class="fa fa-angle-right"></i></li>
-          <li><a href="#gallery">معرض</a><i class="fa fa-angle-right"></i></li>
-          <li><a href="#contact_us">اتصل بنا</a><i class="fa fa-angle-right"></i></li>
-        </ul>
-      </div>
+    <script src="assets/js/jquery-3.2.1.min.js"></script>
+    <script src="assets/js/popper.min.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <script src="assets/plugins/scroll-nav/js/jquery.easing.min.js"></script>
+    <script src="assets/plugins/scroll-nav/js/scrolling-nav.js"></script>
+    <script src="assets/plugins/scroll-fixed/jquery-scrolltofixed-min.js"></script>
+    <script src="assets/js/script.js"></script>
 
-      <div class="col-md-6 col-sm-12 map-img">
-        <h2>اتصل بنا</h2>
-        <address class="md-margin-bottom-40">
-          <?php
-          $ret = mysqli_query($con, "SELECT * FROM tblpage WHERE PageType='contactus'");
-          while ($row = mysqli_fetch_assoc($ret)) {
-            echo nl2br(htmlspecialchars($row['PageDescription'])) . "<br>";
-            echo "Phone: " . htmlspecialchars($row['MobileNumber']) . "<br>";
-            echo 'Email: <a href="mailto:' . htmlspecialchars($row['Email']) . '">' . htmlspecialchars($row['Email']) . "</a><br>";
-            echo "Timing: " . htmlspecialchars($row['OpenningTime']);
-          }
-          ?>
-        </address>
-      </div>
-    </div>
-  </div>
-</footer>
+    <!-- Header scroll & burger -->
+    <script>
+        (function() {
+            var header = document.getElementById('smartHeader');
 
-<div class="copy">
-  <div class="container">نظام إدارة المستشفيات</div>
-</div>
+            function onScroll() {
+                if (window.scrollY > 20) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            }
+            onScroll();
+            window.addEventListener('scroll', onScroll);
 
-<script src="assets/js/jquery-3.2.1.min.js"></script>
-<script src="assets/js/popper.min.js"></script>
-<script src="assets/js/bootstrap.min.js"></script>
-<script src="assets/plugins/scroll-nav/js/jquery.easing.min.js"></script>
-<script src="assets/plugins/scroll-nav/js/scrolling-nav.js"></script>
-<script src="assets/plugins/scroll-fixed/jquery-scrolltofixed-min.js"></script>
-<script src="assets/js/script.js"></script>
+            var burger = document.getElementById('burgerBtn');
+            var navCol = document.querySelector('.nav-col');
+            if (burger && navCol) {
+                burger.addEventListener('click', function() {
+                    navCol.classList.toggle('show');
+                });
+            }
+        })();
+    </script>
+
 </body>
+
 </html>
