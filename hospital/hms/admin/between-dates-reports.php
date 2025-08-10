@@ -2,16 +2,17 @@
 session_start();
 error_reporting(0);
 include('include/config.php');
-if(strlen($_SESSION['id']==0)) {
- header('location:logout.php');
-  } else{
+if (strlen($_SESSION['id'] == 0)) {
+	header('location:logout.php');
+} else {
 
 ?>
-<!DOCTYPE html>
-<html lang="en">
+	<!DOCTYPE html>
+	<html lang="en">
+
 	<head>
 		<title>B/w تواريخ التقارير | المسؤول</title>
-		
+
 		<link href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
 		<link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
@@ -29,22 +30,23 @@ if(strlen($_SESSION['id']==0)) {
 
 
 	</head>
+
 	<body>
-		<div id="app">		
-<?php include('include/sidebar.php');?>
+		<div id="app">
+			<?php include('include/sidebar.php'); ?>
 			<div class="app-content">
-				
-						<?php include('include/header.php');?>
-						
+
+				<?php include('include/header.php'); ?>
+
 				<!-- end: TOP NAVBAR -->
-				<div class="main-content" >
+				<div class="main-content">
 					<div class="wrap-content container" id="container">
 						<!-- start: PAGE TITLE -->
 						<section id="page-title">
 							<div class="row">
 								<div class="col-sm-8">
 									<h1 class="mainTitle">بين التواريخ | التقارير</h1>
-																	</div>
+								</div>
 								<ol class="breadcrumb">
 									<li>
 										<span>بين التواريخ</span>
@@ -60,7 +62,7 @@ if(strlen($_SESSION['id']==0)) {
 						<div class="container-fluid container-fullw bg-white">
 							<div class="row">
 								<div class="col-md-12">
-									
+
 									<div class="row margin-top-30">
 										<div class="col-lg-8 col-md-12">
 											<div class="panel panel-white">
@@ -68,24 +70,24 @@ if(strlen($_SESSION['id']==0)) {
 													<h5 class="panel-title">بين تواريخ التقارير</h5>
 												</div>
 												<div class="panel-body">
-									
+
 													<form role="form" method="post" action="betweendates-detailsreports.php">
 														<div class="form-group">
 															<label for="exampleInputPassword1">
-																 من التاريخ:
+																من التاريخ:
 															</label>
-					<input type="date" class="form-control" name="fromdate" id="fromdate" value="" required='true'>
+															<input type="date" class="form-control" name="fromdate" id="fromdate" value="" required='true'>
 														</div>
-		
-													<div class="form-group">
-															<label for="exampleInputPassword1">
-																 الى تاريخ::
-															</label>
-					 <input type="date" class="form-control" name="todate" id="todate" value="" required='true'>
 
-														</div>	
-														
-														
+														<div class="form-group">
+															<label for="exampleInputPassword1">
+																الى تاريخ::
+															</label>
+															<input type="date" class="form-control" name="todate" id="todate" value="" required='true'>
+
+														</div>
+
+
 														<button type="submit" name="submit" id="submit" class="btn btn-o btn-primary">
 															بحث
 														</button>
@@ -93,39 +95,39 @@ if(strlen($_SESSION['id']==0)) {
 												</div>
 											</div>
 										</div>
-											
-											</div>
-										</div>
-									<div class="col-lg-12 col-md-12">
-											<div class="panel panel-white">
-												
-												
-											</div>
-										</div>
+
+									</div>
+								</div>
+								<div class="col-lg-12 col-md-12">
+									<div class="panel panel-white">
+
+
 									</div>
 								</div>
 							</div>
 						</div>
-						<!-- end: BASIC EXAMPLE -->
-			
-					
-					
-						
-						
-					
-						<!-- end: SELECT BOXES -->
-						
 					</div>
 				</div>
+				<!-- end: BASIC EXAMPLE -->
+
+
+
+
+
+
+				<!-- end: SELECT BOXES -->
+
 			</div>
-			<!-- start: FOOTER -->
-	<?php include('include/footer.php');?>
-			<!-- end: FOOTER -->
-		
-			<!-- start: SETTINGS -->
-	<?php include('include/setting.php');?>
-			
-			<!-- end: SETTINGS -->
+		</div>
+		</div>
+		<!-- start: FOOTER -->
+		<?php include('include/footer.php'); ?>
+		<!-- end: FOOTER -->
+
+		<!-- start: SETTINGS -->
+		<?php include('include/setting.php'); ?>
+
+		<!-- end: SETTINGS -->
 		</div>
 		<!-- start: MAIN JAVASCRIPTS -->
 		<script src="vendor/jquery/jquery.min.js"></script>
@@ -158,5 +160,6 @@ if(strlen($_SESSION['id']==0)) {
 		<!-- end: JavaScript Event Handlers for this page -->
 		<!-- end: CLIP-TWO JAVASCRIPTS -->
 	</body>
-</html>
+
+	</html>
 <?php } ?>
