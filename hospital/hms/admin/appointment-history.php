@@ -17,7 +17,7 @@ if (empty($_SESSION['csrf'])) {
     $_SESSION['csrf'] = bin2hex(random_bytes(16));
 }
 
-/* ===== AJAX: تفاصيل موعد واحد لعرضه في نافذة منبثقة ===== */
+/* ===== AJAX: تفاصيل موعد واحد ===== */
 if (isset($_GET['ajax']) && $_GET['ajax'] === 'appt' && isset($_GET['id'])) {
     header('Content-Type: application/json; charset=utf-8');
 
@@ -196,7 +196,7 @@ if ($stmt) {
         .pagination .page-link{border-radius:8px;margin:0 3px}
         .btn-outline-danger{border:1px solid #dc3545}
 
-        /* ——— نافذة منبثقة (متوسطة ومحكمة) ——— */
+        /* نافذة منبثقة (متوسطة ومحكمة) */
         .rt-modal{position:fixed;inset:0;z-index:200000;display:none}
         .rt-modal.open{display:block}
         .rt-modal__backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55)}
@@ -213,50 +213,46 @@ if ($stmt) {
         .rt-modal__close{position:absolute;top:8px;left:10px;border:0;background:transparent;font-size:26px;line-height:1;cursor:pointer;color:#333}
         .rt-modal__body{padding:14px 16px;overflow:auto;max-height:calc(80vh - 100px)}
         .rt-modal-open{overflow:hidden}
-
-        /* RTL داخل المودال: أعمدة تبدأ من اليمين */
-        .rt-modal__body .row{margin-left:0;margin-right:0}
-        .rt-modal__body .col-sm-6,.rt-modal__body .col-sm-12{float:right}
-        .rt-modal__body [class^="col-"]{padding-left:8px;padding-right:8px;margin-bottom:8px}
-
+        /* RTL داخل المودال */
         .info-label{color:#555;font-weight:600;min-width:135px;display:inline-block;white-space:nowrap}
-        .text-muted-dash{color:#888}
     </style>
 </head>
+
 <body>
-<div id="app">
-    <?php include('include/header.php'); ?>
+    <div id="app">
+        <?php include('include/header.php'); ?>
+        <?php include('include/sidebar.php'); ?>
 
-    <div class="container-narrow">
-        <div class="page-head">
-            <h4 class="m-0">سجل المواعيد</h4>
-            <small class="opacity-75">استعرض مواعيدك وقم بالإلغاء عند الحاجة</small>
-        </div>
+        <div class="container-narrow">
+            <div class="page-head">
+                <h4 class="m-0">سجل المواعيد</h4>
+                <small class="opacity-75">استعرض مواعيدك وقم بالإلغاء عند الحاجة</small>
+            </div>
 
-        <?php if (!empty($_SESSION['msg'])): ?>
+            <?php if (!empty($_SESSION['msg'])): ?>
             <div class="alert alert-info alert-compact">
                 <i class="fa fa-info-circle"></i>
                 <?php echo htmlentities($_SESSION['msg'], ENT_QUOTES, 'UTF-8'); ?>
             </div>
             <?php $_SESSION['msg'] = ""; ?>
-        <?php endif; ?>
+            <?php endif; ?>
 
-        <div class="card-clean">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle" id="appointmentsTable">
-                    <thead>
-                        <tr>
-                            <th class="center">#</th>
-                            <th>اسم الطبيب</th>
-                            <th>التخصص</th>
-                            <th>رسوم الاستشارة</th>
-                            <th>تاريخ / وقت الموعد</th>
-                            <th>تاريخ الإنشاء</th>
-                            <th>الحالة</th>
-                            <th class="text-center">الإجراء</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+            <div class="card-clean">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="appointmentsTable">
+                        <thead>
+                            <tr>
+                                <th class="center">#</th>
+                                <th>اسم الطبيب</th>
+                                <th>التخصص</th>
+                                <th>رسوم الاستشارة</th>
+                                <th>تاريخ / وقت الموعد</th>
+                                <th>تاريخ الإنشاء</th>
+                                <th>الحالة</th>
+                                <th class="text-center">الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                         <?php
                         $rowNum = $offset + 1;
                         if (count($rows) > 0):
@@ -298,13 +294,15 @@ if ($stmt) {
                         <?php
                           endforeach;
                         else: ?>
-                        <tr><td colspan="8" class="text-center text-muted">لا توجد مواعيد لعرضها.</td></tr>
+                            <tr>
+                                <td colspan="8" class="text-center text-muted">لا توجد مواعيد لعرضها.</td>
+                            </tr>
                         <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
+                        </tbody>
+                    </table>
+                </div>
 
-            <?php if ($totalPages > 1): ?>
+                <?php if ($totalPages > 1): ?>
                 <nav class="d-flex justify-content-center mt-3">
                     <ul class="pagination">
                         <li class="page-item <?php echo ($page<=1)?'disabled':''; ?>">
@@ -314,22 +312,21 @@ if ($stmt) {
                         $start = max(1, $page-2);
                         $end   = min($totalPages, $page+2);
                         for ($p=$start; $p<=$end; $p++): ?>
-                            <li class="page-item <?php echo ($p==$page)?'active':''; ?>">
-                                <a class="page-link" href="appointment-history.php?page=<?php echo $p; ?>"><?php echo $p; ?></a>
-                            </li>
+                        <li class="page-item <?php echo ($p==$page)?'active':''; ?>">
+                            <a class="page-link" href="appointment-history.php?page=<?php echo $p; ?>"><?php echo $p; ?></a>
+                        </li>
                         <?php endfor; ?>
                         <li class="page-item <?php echo ($page>=$totalPages)?'disabled':''; ?>">
                             <a class="page-link" href="appointment-history.php?page=<?php echo min($totalPages,$page+1); ?>">التالي</a>
                         </li>
                     </ul>
                 </nav>
-            <?php endif; ?>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 
-</div>
-
-<!-- نافذة منبثقة (حجم متوسط و RTL) لعرض تفاصيل الموعد -->
+<!-- نافذة منبثقة (تفاصيل الموعد) -->
 <div id="rtApptModal" class="rt-modal" aria-hidden="true">
   <div class="rt-modal__backdrop" data-rt-close></div>
   <div class="rt-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="rtApptTitle">
@@ -344,7 +341,7 @@ if ($stmt) {
       <div id="ap-error" class="alert alert-danger" style="display:none;"></div>
 
       <div id="ap-content" style="display:none;">
-        <div class="row">
+        <div class="row g-2">
           <div class="col-sm-6"><div><span class="info-label">اسم الطبيب:</span> <span id="apDoc"></span></div></div>
           <div class="col-sm-6"><div><span class="info-label">التخصص:</span> <span id="apSpec"></span></div></div>
           <div class="col-sm-6"><div><span class="info-label">الرسوم:</span> <span id="apFees"></span></div></div>
@@ -364,7 +361,7 @@ if ($stmt) {
 <script src="vendor/jquery/jquery.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
 <script src="vendor/modernizr/modernizr.js"></script>
-script src="vendor/jquery-cookie/jquery.cookie.js"></script>
+<script src="vendor/jquery-cookie/jquery.cookie.js"></script>
 <script src="vendor/perfect-scrollbar/perfect-scrollbar.min.js"></script>
 <script src="vendor/switchery/switchery.min.js"></script>
 <script src="assets/js/main.js"></script>
