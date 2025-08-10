@@ -2,212 +2,224 @@
 session_start();
 error_reporting(0);
 include('include/config.php');
-if (strlen($_SESSION['id'] == 0)) {
-	header('location:logout.php');
-} else {
-	if (isset($_GET['cancel'])) {
-		mysqli_query($con, "update appointment set userStatus='0' where id = '" . $_GET['id'] . "'");
-		$_SESSION['msg'] = "تم الغاء موعدك!!";
-	}
+
+if (empty($_SESSION['id'])) {
+    header('location:logout.php');
+    exit;
+}
+
+$userId = (int)$_SESSION['id'];
+
+/* CSRF */
+if (empty($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(16));
+}
+
+/* إلغاء موعد (POST) */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_id'])) {
+    if (!hash_equals($_SESSION['csrf'], $_POST['csrf'] ?? '')) {
+        $_SESSION['msg'] = 'فشل التحقق الأمني. حاول مرة أخرى.';
+        header('Location: appointment-history.php'); exit;
+    }
+    $aid = (int)($_POST['cancel_id'] ?? 0);
+    if ($aid > 0) {
+        $stmt = $con->prepare("UPDATE appointment SET userStatus=0 WHERE id=? AND userId=? AND userStatus=1");
+        if ($stmt) {
+            $stmt->bind_param('ii', $aid, $userId);
+            $stmt->execute();
+            $_SESSION['msg'] = ($stmt->affected_rows > 0) ? 'تم إلغاء موعدك ✅' : 'تعذّر إلغاء هذا الموعد.';
+            $stmt->close();
+        } else {
+            $_SESSION['msg'] = 'تعذّر تنفيذ طلب الإلغاء.';
+        }
+    }
+    header('Location: appointment-history.php'); exit;
+}
+
+/* جلب حجوزات المريض فقط */
+$rows = [];
+$stmt = $con->prepare("
+    SELECT 
+        a.id, a.doctorSpecialization, a.consultancyFees,
+        a.appointmentDate, a.appointmentTime, a.postingDate,
+        a.userStatus, a.doctorStatus,
+        d.doctorName AS docname
+    FROM appointment a
+    JOIN doctors d ON d.id = a.doctorId
+    WHERE a.userId = ?
+    ORDER BY a.postingDate DESC, a.id DESC
+");
+$stmt->bind_param('i', $userId);
+$stmt->execute();
+$res = $stmt->get_result();
+while ($r = $res->fetch_assoc()) { $rows[] = $r; }
+$stmt->close();
+
+$total = count($rows);
 ?>
-	<!DOCTYPE html>
-	<html lang="en">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <title>المستخدم | سجل المواعيد</title>
 
-	<head>
-		<title>المستخدم | سجل المواعيد</title>
+    <link href="http://fonts.googleapis.com/css?family=Tajawal:300,400,500,700" rel="stylesheet">
+    <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="vendor/themify-icons/themify-icons.min.css">
+    <link href="vendor/animate.css/animate.min.css" rel="stylesheet">
+    <link href="vendor/perfect-scrollbar/perfect-scrollbar.min.css" rel="stylesheet">
+    <link href="vendor/switchery/switchery.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/plugins.css">
+    <link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
 
-		<link href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic" rel="stylesheet" type="text/css" />
-		<link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
-		<link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
-		<link rel="stylesheet" href="vendor/themify-icons/themify-icons.min.css">
-		<link href="vendor/animate.css/animate.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/perfect-scrollbar/perfect-scrollbar.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/switchery/switchery.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-touchspin/jquery.bootstrap-touchspin.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/select2/select2.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-datepicker/bootstrap-datepicker3.standalone.min.css" rel="stylesheet" media="screen">
-		<link href="vendor/bootstrap-timepicker/bootstrap-timepicker.min.css" rel="stylesheet" media="screen">
-		<link rel="stylesheet" href="assets/css/styles.css">
-		<link rel="stylesheet" href="assets/css/plugins.css">
-		<link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
-	</head>
+    <style>
+        :root{
+            --primary:#3498db; --primary2:#4aa8e0;
+            --bg:#f0f5f9; --ink:#1a2530;
+            --ok:#0f8f4e; --warn:#856404; --danger:#b21f2d;
+        }
+        body{font-family:'Tajawal',sans-serif;background:var(--bg);color:#333}
 
-	<body>
-		<div id="app">
-			<?php include('include/sidebar.php'); ?>
-			<div class="app-content">
+        .page-shell{max-width:1200px;margin:24px auto;padding:0 12px}
+        .hero{
+            background:linear-gradient(90deg,var(--primary),var(--primary2));
+            color:#fff;border-radius:14px;padding:18px 20px;margin-bottom:16px;
+            display:flex;align-items:center;justify-content:space-between;gap:12px
+        }
+        .hero h1{margin:0;font-size:22px;font-weight:800}
+        .hero .meta{opacity:.95}
 
+        .card-wrap{background:#fff;border-radius:14px;box-shadow:0 8px 20px rgba(0,0,0,.06);padding:16px}
+        .alert-compact{border-radius:12px;padding:10px 12px}
 
-				<?php include('include/header.php'); ?>
-				<!-- end: TOP NAVBAR -->
-				<div class="main-content">
-					<div class="wrap-content container" id="container">
-						<!-- start: PAGE TITLE -->
-						<section id="page-title">
-							<div class="row">
-								<div class="col-sm-8">
-									<h1 class="mainTitle">المستخدم | سجل المواعيد</h1>
-								</div>
-								<ol class="breadcrumb">
-									<li>
-										<span>المستخدم </span>
-									</li>
-									<li class="active">
-										<span>سجل المواعيد</span>
-									</li>
-								</ol>
-							</div>
-						</section>
-						<!-- end: PAGE TITLE -->
-						<!-- start: BASIC EXAMPLE -->
-						<div class="container-fluid container-fullw bg-white">
+        .table thead th{background:#f7f9fc;border-top:0}
+        .table tbody tr:hover{background:#fcfdff}
+        .table td,.table th{vertical-align:middle}
 
+        .badge-soft{border-radius:30px;padding:6px 10px;font-weight:700;display:inline-flex;gap:6px;align-items:center}
+        .badge-active{background:#e6f7ef;color:var(--ok);border:1px solid #bfe9d1}
+        .badge-user-cancel{background:#fff3cd;color:var(--warn);border:1px solid #ffeeba}
+        .badge-doc-cancel{background:#fde2e1;color:var(--danger);border:1px solid #f5c6cb}
 
-							<div class="row">
-								<div class="col-md-12">
+        .actions .btn{border-radius:10px}
+        .btn-cancel{background:#fff;border:1px solid #f1b5b5;color:#c12f2f}
+        .btn-cancel:hover{background:#ffe9e9}
 
-									<p style="color:red; - appointment-history.php:68"><?php echo htmlentities($_SESSION['msg']); ?>
-										<?php echo htmlentities($_SESSION['msg - appointment-history.php:69'] = ""); ?></p>
-									<table class="table table-hover" id="sample-table-1">
-										<thead>
-											<tr>
-												<th class="center">#</th>
-												<th class="hidden-xs">اسم الطبيب</th>
-												<th>التخصص</th>
-												<th>رسوم الاستشارة</th>
-												<th>وقت/تاريخ التعيين </th>
-												<th>تاريخ إنشاء الموعد </th>
-												<th>الوضع الحالي</th>
-												<th>الإجراء</th>
+        /* شريط علوي صغير فوق الجدول */
+        .list-header{
+            display:flex;gap:10px;align-items:center;justify-content:space-between;
+            padding:8px 12px;border:1px solid #eef2f7;border-radius:10px;margin-bottom:10px;background:#fbfdff
+        }
+        .chip{background:#eef7ff;color:#0d6efd;border:1px solid #cfe5ff;border-radius:40px;padding:4px 10px;font-weight:600}
+        .muted{color:#6c757d}
 
-											</tr>
-										</thead>
-										<tbody>
-											<?php
-											$sql = mysqli_query($con, "select doctors.doctorName as docname,appointment.*  from appointment join doctors on doctors.id=appointment.doctorId where appointment.userId='" . $_SESSION['id'] . "'");
-											$cnt = 1;
-											while ($row = mysqli_fetch_array($sql)) {
-											?>
+        /* جوال: تمرير أفقي للجدول بدل كسره */
+        .table-responsive{border-radius:12px;border:1px solid #eef2f7}
+    </style>
+</head>
+<body>
 
-												<tr>
-													<td class="center - appointment-history.php:93"><?php echo $cnt; ?>.</td>
-													<td class="hiddenxs - appointment-history.php:94"><?php echo $row['docname']; ?></td>
-													<td><?php echo $row['doctorSpecialization - appointment-history.php:95']; ?></td>
-													<td><?php echo $row['consultancyFees - appointment-history.php:96']; ?></td>
-													<td><?php echo $row['appointmentDate - appointment-history.php:97']; ?> / <?php echo
-																																$row['appointmentTime']; ?>
-													</td>
-													<td><?php echo $row['postingDate - appointment-history.php:100']; ?></td>
-													<td>
-														<?php if (($row['userStatus'] == 1) && ($row['doctorStatus'] == 1)) {
-															echo "نشط - appointment-history.php:104";
-														}
-														if (($row['userStatus'] == 0) && ($row['doctorStatus'] == 1)) {
-															echo "إالغاء بواسطتك - appointment-history.php:108";
-														}
+<div class="page-shell">
 
-														if (($row['userStatus'] == 1) && ($row['doctorStatus'] == 0)) {
-															echo "إالغاء من قبل الطبيب - appointment-history.php:113";
-														}
+    <!-- الهيدر -->
+    <div class="hero">
+        <div>
+            <h1>سجل المواعيد</h1>
+            <div class="meta">جميع حجوزاتك مرتبة من الأحدث إلى الأقدم</div>
+        </div>
+        <div class="chip"><i class="fa fa-calendar-check-o"></i> الإجمالي: <?php echo (int)$total; ?></div>
+    </div>
 
+    <!-- رسالة النظام -->
+    <?php if (!empty($_SESSION['msg'])): ?>
+        <div class="alert alert-info alert-compact">
+            <i class="fa fa-info-circle"></i> <?php echo htmlentities($_SESSION['msg']); ?>
+        </div>
+        <?php $_SESSION['msg']=""; ?>
+    <?php endif; ?>
 
+    <!-- الكارد الرئيسي -->
+    <div class="card-wrap">
 
-														?></td>
-													<td>
-														<div class="visible-md visible-lg hidden-sm hidden-xs">
-															<?php if (($row['userStatus'] == 1) && ($row['doctorStatus'] == 1)) { ?>
+        <div class="list-header">
+            <div class="muted"><i class="fa fa-list-ul"></i> قائمة المواعيد</div>
+            <div class="muted"><i class="fa fa-refresh"></i> آخر تحديث: الآن</div>
+        </div>
 
+        <div class="table-responsive">
+            <table class="table table-hover" id="appointments">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width:70px">#</th>
+                        <th>اسم الطبيب</th>
+                        <th>التخصص</th>
+                        <th>الرسوم</th>
+                        <th>تاريخ/وقت الموعد</th>
+                        <th>تاريخ الإنشاء</th>
+                        <th style="width:140px">الحالة</th>
+                        <th class="text-center" style="width:140px">إجراء</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if ($rows): $i=1; foreach($rows as $row): ?>
+                    <tr>
+                        <td class="text-center"><?php echo $i++; ?>.</td>
+                        <td class="fw-bold"><?php echo htmlentities($row['docname']); ?></td>
+                        <td><?php echo htmlentities($row['doctorSpecialization']); ?></td>
+                        <td><strong><?php echo htmlentities($row['consultancyFees']); ?></strong></td>
+                        <td><?php echo htmlentities($row['appointmentDate']); ?> — <?php echo htmlentities($row['appointmentTime']); ?></td>
+                        <td class="muted"><?php echo htmlentities($row['postingDate']); ?></td>
+                        <td>
+                            <?php
+                              if ((int)$row['userStatus']===1 && (int)$row['doctorStatus']===1) {
+                                  echo '<span class="badge-soft badge-active"><i class="fa fa-check-circle"></i> نشط</span>';
+                              } elseif ((int)$row['userStatus']===0 && (int)$row['doctorStatus']===1) {
+                                  echo '<span class="badge-soft badge-user-cancel"><i class="fa fa-user-times"></i> أُلغي بواسطتك</span>';
+                              } else {
+                                  echo '<span class="badge-soft badge-doc-cancel"><i class="fa fa-ban"></i> أُلغي من الطبيب</span>';
+                              }
+                            ?>
+                        </td>
+                        <td class="text-center actions">
+                            <?php if ((int)$row['userStatus']===1 && (int)$row['doctorStatus']===1): ?>
+                                <form method="post" onsubmit="return confirm('هل تريد إلغاء هذا الموعد؟');" style="display:inline-block">
+                                    <input type="hidden" name="csrf" value="<?php echo $_SESSION['csrf']; ?>">
+                                    <input type="hidden" name="cancel_id" value="<?php echo (int)$row['id']; ?>">
+                                    <button class="btn btn-cancel btn-sm">
+                                        <i class="fa fa-times"></i> إلغاء
+                                    </button>
+                                </form>
+                            <?php else: ?>
+                                <span class="muted">—</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; else: ?>
+                    <tr>
+                        <td colspan="8" class="text-center muted" style="padding:28px">
+                            <i class="fa fa-calendar-o" style="font-size:22px"></i>
+                            <div class="mt-2">لا توجد مواعيد لعرضها حالياً.</div>
+                        </td>
+                    </tr>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
 
-																<a href="?id=<?php echo $row['id'] ?>&cancel=update - appointment-history.php:125" onClick="return confirm('Are you sure you want to cancel this appointment ?')" class="btn btn-primary btn-xs" title="Cancel Appointment" tooltip-placement="top" tooltip="Remove">الغاء</a>
-															<?php } else {
+    </div><!-- /card-wrap -->
+</div><!-- /page-shell -->
 
-																echo "تم الإلغاء - appointment-history.php:128";
-															} ?>
-														</div>
-														<div class="visible-xs visible-sm hidden-md hidden-lg">
-															<div class="btn-group" dropdown is-open="status.isopen">
-																<button type="button" class="btn btn-primary btn-o btn-sm dropdown-toggle" dropdown-toggle>
-																	<i class="fa fa-cog"></i>&nbsp;<span class="caret"></span>
-																</button>
-																<ul class="dropdown-menu pull-right dropdown-light" role="menu">
-																	<li>
-																		<a href="#">
-																			تعديل
-																		</a>
-																	</li>
-																	<li>
-																		<a href="#">
-
-																		</a>مشاركة
-																	</li>
-																	<li>
-																		<a href="#">
-																			حذف
-																		</a>
-																	</li>
-																</ul>
-															</div>
-														</div>
-													</td>
-												</tr>
-
-											<?php
-												$cnt = $cnt + 1;
-											} ?>
-
-
-										</tbody>
-									</table>
-								</div>
-							</div>
-						</div>
-
-						<!-- end: BASIC EXAMPLE -->
-						<!-- end: SELECT BOXES -->
-
-					</div>
-				</div>
-			</div>
-			<!-- start: FOOTER -->
-			<?php include('include/footer.php'); ?>
-			<!-- end: FOOTER -->
-
-			<!-- start: SETTINGS -->
-			<?php include('include/setting.php'); ?>
-
-			<!-- end: SETTINGS -->
-		</div>
-		<!-- start: MAIN JAVASCRIPTS -->
-		<script src="vendor/jquery/jquery.min.js"></script>
-		<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-		<script src="vendor/modernizr/modernizr.js"></script>
-		<script src="vendor/jquery-cookie/jquery.cookie.js"></script>
-		<script src="vendor/perfect-scrollbar/perfect-scrollbar.min.js"></script>
-		<script src="vendor/switchery/switchery.min.js"></script>
-		<!-- end: MAIN JAVASCRIPTS -->
-		<!-- start: JAVASCRIPTS REQUIRED FOR THIS PAGE ONLY -->
-		<script src="vendor/maskedinput/jquery.maskedinput.min.js"></script>
-		<script src="vendor/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js"></script>
-		<script src="vendor/autosize/autosize.min.js"></script>
-		<script src="vendor/selectFx/classie.js"></script>
-		<script src="vendor/selectFx/selectFx.js"></script>
-		<script src="vendor/select2/select2.min.js"></script>
-		<script src="vendor/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
-		<script src="vendor/bootstrap-timepicker/bootstrap-timepicker.min.js"></script>
-		<!-- end: JAVASCRIPTS REQUIRED FOR THIS PAGE ONLY -->
-		<!-- start: CLIP-TWO JAVASCRIPTS -->
-		<script src="assets/js/main.js"></script>
-		<!-- start: JavaScript Event Handlers for this page -->
-		<script src="assets/js/form-elements.js"></script>
-		<script>
-			jQuery(document).ready(function() {
-				Main.init();
-				FormElements.init();
-			});
-		</script>
-		<!-- end: JavaScript Event Handlers for this page -->
-		<!-- end: CLIP-TWO JAVASCRIPTS -->
-	</body>
-
-	</html>
-<?php } ?>
+<script src="vendor/jquery/jquery.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+<script src="vendor/modernizr/modernizr.js"></script>
+<script src="vendor/jquery-cookie/jquery.cookie.js"></script>
+<script src="vendor/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+<script src="vendor/switchery/switchery.min.js"></script>
+<script src="assets/js/main.js"></script>
+<script>
+jQuery(function(){ if (window.Main) Main.init(); });
+</script>
+</body>
+</html>

@@ -8,7 +8,58 @@ if (empty($_SESSION['id'])) {
     exit;
 }
 
-/* إضافة تخصص */
+/* =====================[ معالجات AJAX ]===================== */
+
+// جلب بيانات تخصص واحد لعرضه في المودال
+if (isset($_GET['ajax']) && $_GET['ajax'] === 'spec' && isset($_GET['id'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    $sid = (int)$_GET['id'];
+
+    $stmt = mysqli_prepare($con, "SELECT id, specilization, creationDate, updationDate FROM doctorspecilization WHERE id = ? LIMIT 1");
+    mysqli_stmt_bind_param($stmt, "i", $sid);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    $row = $res ? mysqli_fetch_assoc($res) : null;
+
+    if ($row) {
+        echo json_encode(['ok' => true, 'data' => $row], JSON_UNESCAPED_UNICODE);
+    } else {
+        http_response_code(404);
+        echo json_encode(['ok' => false, 'msg' => 'التخصص غير موجود'], JSON_UNESCAPED_UNICODE);
+    }
+    exit;
+}
+
+// حفظ تعديل التخصص من المودال
+if (isset($_POST['ajax']) && $_POST['ajax'] === 'save_spec') {
+    header('Content-Type: application/json; charset=utf-8');
+    $sid = (int)($_POST['id'] ?? 0);
+    $name = trim($_POST['specilization'] ?? '');
+
+    if ($sid <= 0 || $name === '') {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'msg' => 'بيانات غير صالحة'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $stmt = mysqli_prepare($con, "UPDATE doctorspecilization SET specilization = ?, updationDate = NOW() WHERE id = ?");
+    mysqli_stmt_bind_param($stmt, "si", $name, $sid);
+    $ok = mysqli_stmt_execute($stmt);
+
+    if ($ok) {
+        $r = mysqli_query($con, "SELECT updationDate FROM doctorspecilization WHERE id = $sid");
+        $ud = ($r && mysqli_num_rows($r) > 0) ? mysqli_fetch_assoc($r)['updationDate'] : date('Y-m-d H:i:s');
+        echo json_encode(['ok' => true, 'data' => ['id' => $sid, 'specilization' => $name, 'updationDate' => $ud]], JSON_UNESCAPED_UNICODE);
+    } else {
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'msg' => 'تعذر الحفظ'], JSON_UNESCAPED_UNICODE);
+    }
+    exit;
+}
+
+/* =====================[ عمليات الصفحة العادية ]===================== */
+
+/* إضافة تخصص (النموذج العادي) */
 if (isset($_POST['submit'])) {
     $doctorspecilization = trim($_POST['doctorspecilization'] ?? '');
     if ($doctorspecilization !== '') {
@@ -140,22 +191,20 @@ $start_from = ($page - 1) * $limit;
                     </thead>
                     <tbody>
                     <?php
-                    // لاحظ: اسم الجدول الصحيح doctorspecilization
                     $sql = mysqli_query($con, "SELECT * FROM doctorspecilization ORDER BY id DESC LIMIT $start_from, $limit");
                     $cnt = $start_from + 1;
                     if ($sql && mysqli_num_rows($sql) > 0):
                         while ($row = mysqli_fetch_assoc($sql)):
                     ?>
-                        <tr>
+                        <tr data-row-id="<?= (int)$row['id'] ?>">
                             <td class="text-center"><?= $cnt ?></td>
-                            <td><?= htmlspecialchars($row['specilization']) ?></td>
+                            <td class="col-spec"><?= htmlspecialchars($row['specilization']) ?></td>
                             <td><?= htmlspecialchars($row['creationDate']) ?></td>
-                            <td><?= htmlspecialchars($row['updationDate']) ?></td>
+                            <td class="col-updated"><?= htmlspecialchars($row['updationDate']) ?></td>
                             <td class="text-center">
-                                <a href="editdoctorspecialization.php?id=<?= (int)$row['id'] ?>" class="action-btn btn-edit" title="تعديل">
-    <i class="fas fa-edit me-1"></i> تعديل
-</a>
-
+                                <button type="button" class="action-btn btn-edit edit-btn" data-id="<?= (int)$row['id'] ?>">
+                                    <i class="fas fa-edit me-1"></i> تعديل
+                                </button>
                                 <a href="?id=<?= (int)$row['id'] ?>&del=1" class="action-btn btn-delete" title="حذف"
                                    onclick="return confirm('هل أنت متأكد أنك تريد حذف هذا التخصص؟');">
                                     <i class="fas fa-trash-alt me-1"></i> حذف
@@ -183,15 +232,14 @@ $start_from = ($page - 1) * $limit;
 
             <?php
             $result = mysqli_query($con, "SELECT COUNT(*) AS total FROM doctorspecilization");
-            $row = mysqli_fetch_assoc($result);
-            $total_records = (int)$row['total'];
+            $rowc = mysqli_fetch_assoc($result);
+            $total_records = (int)$rowc['total'];
             $total_pages = max(1, (int)ceil($total_records / $limit));
             if ($total_pages > 1):
+                $shown = min($limit, max(0, $total_records - $start_from));
             ?>
             <div class="pagination-container">
-                <div class="page-info">
-                    عرض <?= min($limit, max(0, $cnt - 1 - $start_from)) ?> من أصل <?= $total_records ?> تخصص
-                </div>
+                <div class="page-info">عرض <?= $shown ?> من أصل <?= $total_records ?> تخصص</div>
                 <nav>
                     <ul class="pagination">
                         <li class="page-item <?= $page<=1?'disabled':'' ?>">
@@ -201,16 +249,16 @@ $start_from = ($page - 1) * $limit;
                         $start = max(1, $page - 2);
                         $end   = min($total_pages, $page + 2);
                         if ($start > 1) {
-                            echo '<li class="pageitem"><a class="pagelink" href="?page=1">1</a></li> - doctor-specilization.php:204';
-                            if ($start > 2) echo '<li class="pageitem disabled"><span class="pagelink">…</span></li> - doctor-specilization.php:205';
+                            echo '<li class="page-item"><a class="page-link" href="?page=1">1</a></li>';
+                            if ($start > 2) echo '<li class="page-item disabled"><span class="page-link">…</span></li>';
                         }
                         for ($i=$start; $i<=$end; $i++):
-                        ?>
-                            <li class="page-item <?= $i==$page?'active':'' ?>"><a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a></li>
-                        <?php endfor;
+                            $active = ($i==$page) ? 'active' : '';
+                            echo '<li class="page-item '.$active.'"><a class="page-link" href="?page='.$i.'">'.$i.'</a></li>';
+                        endfor;
                         if ($end < $total_pages) {
-                            if ($end < $total_pages - 1) echo '<li class="pageitem disabled"><span class="pagelink">…</span></li> - doctor-specilization.php:212';
-                            echo '<li class="pageitem"><a class="pagelink" href="?page= - doctor-specilization.php:213'.$total_pages.'">'.$total_pages.'</a></li>';
+                            if ($end < $total_pages - 1) echo '<li class="page-item disabled"><span class="page-link">…</span></li>';
+                            echo '<li class="page-item"><a class="page-link" href="?page='.$total_pages.'">'.$total_pages.'</a></li>';
                         }
                         ?>
                         <li class="page-item <?= $page>=$total_pages?'disabled':'' ?>">
@@ -225,9 +273,134 @@ $start_from = ($page - 1) * $limit;
 </div>
 
 <?php include('include/setting.php'); ?>
+
+<!-- Modal: تعديل تخصص -->
+<div class="modal fade" id="editSpecModal" tabindex="-1" aria-hidden="true" dir="rtl">
+  <div class="modal-dialog modal-md modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title"><i class="fas fa-pen-to-square me-2"></i>تعديل التخصص</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <form id="editSpecForm" class="needs-validation" novalidate>
+        <div class="modal-body">
+          <div id="editAlert" class="alert alert-danger d-none"></div>
+
+          <input type="hidden" name="id" id="edit_id">
+          <div class="mb-3">
+            <label class="form-label fw-bold">اسم التخصص</label>
+            <input type="text" class="form-control" id="edit_name" name="specilization" placeholder="اكتب اسم التخصص" required>
+            <div class="invalid-feedback">الرجاء إدخال اسم التخصص.</div>
+          </div>
+
+          <div id="editLoading" class="text-center py-2 d-none">
+            <div class="spinner-border" role="status"><span class="visually-hidden">تحميل...</span></div>
+            <div class="mt-2 small">جاري التحميل...</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>حفظ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// إخفاء رسائل الفلاش القديمة
 setTimeout(()=>{ document.querySelectorAll('.alert-message').forEach(a=>a.remove()); }, 5000);
+
+// عناصر المودال
+const editModalEl = document.getElementById('editSpecModal');
+const editModal   = new bootstrap.Modal(editModalEl);
+const editForm    = document.getElementById('editSpecForm');
+const editId      = document.getElementById('edit_id');
+const editName    = document.getElementById('edit_name');
+const editAlert   = document.getElementById('editAlert');
+const editLoading = document.getElementById('editLoading');
+
+// فتح المودال وجلب البيانات
+document.querySelectorAll('.edit-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const id = btn.dataset.id;
+    openEditModal(id);
+  });
+});
+
+function openEditModal(id){
+  resetEditModal();
+  editId.value = id;
+  editModal.show();
+  // جلب البيانات
+  toggleLoading(true);
+  fetch(`${location.pathname}?ajax=spec&id=${encodeURIComponent(id)}&_=${Date.now()}`)
+    .then(r => r.json())
+    .then(json => {
+      if(!json.ok) throw new Error(json.msg || 'تعذر جلب البيانات');
+      editName.value = json.data.specilization || '';
+    })
+    .catch(err => showEditError(err.message || 'حدث خطأ غير متوقع'))
+    .finally(()=> toggleLoading(false));
+}
+
+function resetEditModal(){
+  editAlert.classList.add('d-none');
+  editAlert.textContent = '';
+  editForm.classList.remove('was-validated');
+  editName.value = '';
+}
+
+function showEditError(msg){
+  editAlert.textContent = msg;
+  editAlert.classList.remove('d-none');
+}
+
+function toggleLoading(show){
+  editLoading.classList.toggle('d-none', !show);
+}
+
+// حفظ التعديل AJAX
+editForm.addEventListener('submit', (e)=>{
+  e.preventDefault();
+  editForm.classList.add('was-validated');
+  if(!editForm.checkValidity()) return;
+
+  const fd = new FormData(editForm);
+  fd.append('ajax', 'save_spec');
+
+  toggleLoading(true);
+  fetch(location.pathname, { method:'POST', body: fd })
+    .then(r => r.json())
+    .then(json => {
+      if(!json.ok) throw new Error(json.msg || 'تعذر الحفظ');
+      // حدّث الصف في الجدول
+      const d = json.data;
+      const row = document.querySelector(`tr[data-row-id="${d.id}"]`);
+      if(row){
+        const colSpec = row.querySelector('.col-spec');
+        const colUpd  = row.querySelector('.col-updated');
+        if(colSpec) colSpec.textContent = d.specilization || '';
+        if(colUpd)  colUpd.textContent  = d.updationDate || '';
+      }
+      // نجاح: أغلق المودال بعد لحظات
+      editAlert.classList.remove('alert-danger'); 
+      editAlert.classList.add('alert','alert-success');
+      editAlert.textContent = 'تم حفظ التعديلات بنجاح';
+      editAlert.classList.remove('d-none');
+      setTimeout(()=>{ editModal.hide(); }, 700);
+    })
+    .catch(err => {
+      showEditError(err.message || 'حدث خطأ غير متوقع');
+    })
+    .finally(()=> toggleLoading(false));
+});
+
+// Enter يحفظ التعديل
+editName.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){ e.preventDefault(); editForm.requestSubmit(); }
+});
 </script>
 </body>
 </html>
