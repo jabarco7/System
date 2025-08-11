@@ -1,4 +1,4 @@
-/* ---------------------------------------------------------------------- 
+/* ----------------------------------------------------------------------
 >>> TABLE OF CONTENT
 -------------------------------------------------------------------------
 1 - Basic Elements & Classes
@@ -1823,23 +1823,36 @@ ul.sub-menu li ul.sub-menu li ul.sub-menu li a {
 /* ---------------------------------------------------------------------- */
 /*  OFF SIDEBAR
 /* ---------------------------------------------------------------------- */
-#off-sidebar {
+#off-sidebar{
   bottom: 0;
   position: fixed;
   right: -260px;
-  top: 64px;
-  -moz-transition: all 0.3s !important 0s;
-  -o-transition: all 0.3s !important 0s;
-  -webkit-transition: all 0.3s !important;
-  -webkit-transition-delay: 0s;
-  transition: all 0.3s !important 0s;
+  /* اجعلها مساوية لارتفاع الهيدر لديك (غالبًا 72px) */
+  top: 72px;
+
   width: 260px;
   z-index: 1091;
-  background: #ffffff;
+  background: #fff;
   border-left: 1px solid #c8c7cc;
   border-top: 1px solid #c8c7cc;
   overflow: hidden;
+
+  /* transitions – بدون أخطاء نحوية */
+  -webkit-transition: right .3s ease;
+  -moz-transition: right .3s ease;
+  -o-transition: right .3s ease;
+  transition: right .3s ease;
+
+  /* لو تريد تأخيرًا صِفريًا بشكل صريح (اختياري) */
+  /* -webkit-transition-delay: 0s;
+     -moz-transition-delay: 0s;
+     -o-transition-delay: 0s;
+     transition-delay: 0s; */
 }
+
+/* مثال لفتح الـ off-sidebar */
+.app-off-sidebar-open #off-sidebar{ right: 0; }
+
 #off-sidebar .tab-content {
   position: absolute;
   bottom: 0;
@@ -4402,51 +4415,21 @@ a.text-light:hover {
   -ms-animation: heart-pulse 1s linear infinite;
   animation: heart-pulse 1s linear infinite;
 }
+/* لِـ Safari القديم (اختياري) */
+@-webkit-keyframes heart-pulse {
+  0%   { color: #a51919; }
+  90%  { color: rgba(255, 0, 0, 0); }
+  100% { color: red; }
+}
 
-@keyframes "heart-pulse" {
-  0% {
-    color: #a51919;
-  }
-  90% {
-    color: rgba(255, 0, 0, 0);
-  }
-  100% {
-    color: red;
-  }
+/* القياسي */
+@keyframes heart-pulse {
+  0%   { color: #a51919; }
+  90%  { color: rgba(255, 0, 0, 0); }
+  100% { color: red; }
 }
-@-moz-keyframes heart-pulse {
-  0% {
-    color: #a51919;
-  }
-  90% {
-    color: rgba(255, 0, 0, 0);
-  }
-  100% {
-    color: red;
-  }
-}
-@-webkit-keyframes "heart-pulse" {
-  0% {
-    color: #a51919;
-  }
-  90% {
-    color: rgba(255, 0, 0, 0);
-  }
-  100% {
-    color: red;
-  }
-}
-@-ms-keyframes "heart-pulse" {
-  0% {
-    color: #a51919;
-  }
-  90% {
-    color: rgba(255, 0, 0, 0);
-  }
-  100% {
-    color: red;
-  }
-}
+
+
 /* ---------------------------------------------------------------------- */
 /* Progress Bar
 /* ---------------------------------------------------------------------- */

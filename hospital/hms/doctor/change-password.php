@@ -44,6 +44,8 @@ $_SESSION['msg1']="Old Password not match !!";
 		<link rel="stylesheet" href="assets/css/styles.css">
 		<link rel="stylesheet" href="assets/css/plugins.css">
 		<link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
+		<link rel="stylesheet" href="assets/css/hms-unified.css?v=1.1">
+
 <script type="text/javascript">
 function valid()
 {
