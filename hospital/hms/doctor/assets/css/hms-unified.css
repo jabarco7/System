@@ -55,7 +55,9 @@ body {
     box-shadow: 0 2px 10px rgba(0, 0, 0, .06);
     z-index: 1050;
     display: flex;
-    align-items: center;
+    align-items: center !important;
+        margin-right: auto !important;
+    margin-left: auto !important;
 }
 
 .navbar.navbar-default .navbar-brand h2 {
@@ -324,6 +326,7 @@ body {
 .hms-userbox {
     position: relative;
     margin-inline-start: auto;
+    
     /* يركن يمين/يسار حسب RTL */
 }
 
@@ -423,7 +426,7 @@ body {
     box-shadow: 0 2px 10px rgba(0, 0, 0, .06);
     z-index: 1050;
     display: flex;
-    align-items: center;
+    align-items: center !important;
 }
 
 .navbar.navbar-default .navbar-brand h2 {
@@ -727,6 +730,8 @@ body {
     gap: 10px;
     color: #e9eef7;
     text-decoration: none;
+        margin-right: auto;
+    margin-left: auto;
 }
 
 .hms-userbox .user-menu {
@@ -756,3 +761,86 @@ body {
 .hms-userbox .user-menu a:hover {
     background: #f6f9fc;
 }
+/* ===== إعدادات عامة للـ RTL و إزالة الفراغ العلوي ===== */
+:root{
+  --header-h: 64px;   /* ارتفاع الهيدر */
+  --sidebar-w: 280px; /* عرض السايدبار */
+}
+
+html, body, #app{ margin:0; padding:0 !important; }
+html[dir="rtl"], body{ direction: rtl; text-align: right; font-family: 'Tajawal', sans-serif; background:#f0f5f9; }
+
+/* ===== الهيدر (نفس اللي في الداشبورد) ===== */
+.hms-topbar{
+  position: sticky; top: 0; z-index: 1000;
+  display:flex; align-items:center; justify-content:center;
+  min-height: var(--header-h);
+  background: linear-gradient(90deg,#0b1f3b,#0c2a55);
+  color:#fff; padding: 0 16px;
+}
+.hms-topbar .hms-slot{position:absolute; top:50%; transform:translateY(-50%); display:flex; align-items:center; gap:8px;}
+.hms-topbar .hms-slot-right{right:16px;}
+.hms-topbar .hms-slot-left{left:16px;}
+.hms-topbar .hms-center{pointer-events:none;}
+.hms-topbar .hms-center > *{pointer-events:auto;}
+.hms-title{font-weight:700; letter-spacing:.3px}
+
+/* ===== السايدبار (موحد) ===== */
+#sidebar.app-sidebar{
+  position: fixed; top:0; right:0; bottom:0;
+  width: var(--sidebar-w);
+  background:#0b1f3b;
+  color:#e3eaf6;
+  overflow-y:auto;
+  padding-top: var(--header-h); /* تحت الهيدر */
+  border-left: 1px solid rgba(255,255,255,.05);
+}
+#sidebar .sidebar-header{
+  padding:14px 16px; border-bottom:1px solid rgba(255,255,255,.06);
+}
+#sidebar .user-mini{
+  display:flex; align-items:center; gap:14px;
+}
+#sidebar .avatar{
+  width:40px; height:40px; border-radius:50%; background:#0d6efd; color:#fff;
+  display:inline-flex; align-items:center; justify-content:center; font-weight:700;
+}
+#sidebar nav ul{ list-style:none; margin:8px 0; padding:0; }
+#sidebar nav li{ margin:4px 8px; }
+#sidebar nav a{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border-radius:10px; color:#e3eaf6; text-decoration:none;
+}
+#sidebar nav a:hover{ background:rgba(255,255,255,.06); }
+#sidebar nav a.is-active{ background:#19345f; }
+#sidebar nav i{ width:18px; text-align:center; }
+
+/* ===== منطقة المحتوى (يمين السايدبار) ===== */
+.app-content, .main-content{
+  margin-right: var(--sidebar-w);
+  margin-left: 0;
+  padding-bottom: 24px;
+}
+@media (max-width: 992px){
+  #sidebar.app-sidebar{ transform: translateX(100%); transition: transform .25s ease; }
+  #sidebar.app-sidebar.active{ transform: translateX(0); }
+  .app-content, .main-content{ margin-right: 0; }
+}
+
+/* ===== رأس القسم/الكاردات (تجميل عام) ===== */
+.page-head, .page-header{
+  background:linear-gradient(90deg,#3498db,#4aa8e0);
+  color:#fff; border-radius:12px; padding:16px 18px; margin:20px 20px 12px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.page-head h1, .page-header h1{ margin:0; font-size:1.25rem; }
+
+.container-fullw, .card{
+  border-radius:12px; background:#fff; box-shadow:0 8px 20px rgba(0,0,0,.06);
+  padding:18px; margin:0 20px 24px;
+}
+
+/* حقول/جداول */
+.form-control, .form-select{ border-radius:10px; direction: rtl; text-align: right; }
+.table th, .table td{ text-align:right; }
+.breadcrumb{ direction: rtl; }

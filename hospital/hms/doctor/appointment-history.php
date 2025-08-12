@@ -94,11 +94,44 @@ if ($st = $con->prepare("
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="assets/css/hms-unified.css?v=1.0">
 
+  <!-- تنسيق زرّي الفلترة فقط -->
+  <style>
+    .filters{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; flex-wrap:wrap;
+    }
+    .seg{
+      display:inline-flex; align-items:center; gap:6px;
+      background:#fff; border:1px solid #e0ecfb; border-radius:999px; padding:4px;
+    }
+    .seg-btn{
+      border:0; background:transparent; padding:8px 14px; border-radius:999px;
+      cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:8px;
+      transition:.15s ease;
+    }
+    .seg-btn:hover{ background:#f3f8ff; }
+    .seg-btn.active{
+      background:#0d6efd; color:#fff; box-shadow:0 4px 12px rgba(13,110,253,.25);
+    }
 
+    .date-pill{
+      display:flex; align-items:center; gap:8px;
+      background:#fff; border:1px solid #e0ecfb; border-radius:999px; padding:6px 10px;
+    }
+    .date-pill i{ color:#6e86a5; }
+    .date-pill input[type="date"]{
+      border:0; outline:none; height:34px; min-width:175px; background:transparent;
+    }
+    .date-pill .clear-date{
+      border:0; background:transparent; padding:6px 10px; border-radius:999px;
+      color:#6c7a92; cursor:pointer;
+    }
+    .date-pill .clear-date:hover{ background:#f2f6ff; }
+  </style>
 </head>
 <body>
 
-  <!-- نفس الترتيب: أولاً الهيدر، ثم السايدبار، ثم .main-content -->
+  <!-- الهيدر والسايدبار كما هم -->
   <?php include('include/header.php'); ?>
   <?php include('include/sidebar.php'); ?>
 
@@ -131,15 +164,25 @@ if ($st = $con->prepare("
 
     <div class="card">
       <div class="card-header">
-        <span class="muted"><i class="fa-solid fa-filter me-2"></i>فلاتر</span>
-        <div class="d-flex gap-2 flex-wrap">
-          <select id="statusFilter" class="form-select" style="min-width:160px">
-            <option value="all">كل الحالات</option>
-            <option value="active">نشطة</option>
-            <option value="cancelled">ملغية</option>
-            <option value="pending">قيد الانتظار</option>
-          </select>
-          <input type="date" id="dateFilter" class="form-control" />
+        <div class="filters">
+          <!-- فلترة الحالة (أزرار مجزأة) -->
+          <div class="seg" id="statusSeg">
+            <button class="seg-btn active" data-value="all">
+              <i class="fa fa-layer-group"></i> <span>كل الحالات</span>
+            </button>
+            <button class="seg-btn" data-value="active">نشطة</button>
+            <button class="seg-btn" data-value="pending">قيد الانتظار</button>
+            <button class="seg-btn" data-value="cancelled">ملغية</button>
+          </div>
+
+          <!-- فلترة التاريخ (كبسولة مع زر مسح) -->
+          <div class="date-pill">
+            <i class="fa-regular fa-calendar"></i>
+            <input type="date" id="dateFilter" />
+            <button class="clear-date" id="clearDate" title="مسح التاريخ">
+              <i class="fa fa-xmark"></i>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -208,23 +251,52 @@ if ($st = $con->prepare("
   </div>
 
   <script>
-    // فلترة الحالة
-    document.getElementById('statusFilter').addEventListener('change', function(){
-      const v = this.value;
-      document.querySelectorAll('#apptTable tbody tr').forEach(tr=>{
-        const ok = (v==='all') || (tr.dataset.status===v);
-        tr.style.display = ok ? '' : 'none';
+    // حالة وتاريخ حاليين
+    let currentStatus = 'all';
+    let currentDate   = '';
+
+    const rows = Array.from(document.querySelectorAll('#apptTable tbody tr'));
+    const statusSeg = document.getElementById('statusSeg');
+    const dateInput = document.getElementById('dateFilter');
+    const clearDate = document.getElementById('clearDate');
+
+    function applyFilters(){
+      rows.forEach(tr=>{
+        const s = tr.dataset.status;   // active | pending | cancelled
+        const d = tr.dataset.date;     // YYYY-MM-DD
+
+        const okStatus = (currentStatus==='all') || (s===currentStatus);
+        const okDate   = (!currentDate) || (d===currentDate);
+
+        tr.style.display = (okStatus && okDate) ? '' : 'none';
+      });
+    }
+
+    // أزرار الحالة
+    statusSeg.querySelectorAll('.seg-btn').forEach(btn=>{
+      btn.addEventListener('click', function(){
+        statusSeg.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
+        this.classList.add('active');
+        currentStatus = this.dataset.value;
+        applyFilters();
       });
     });
 
-    // فلترة التاريخ
-    document.getElementById('dateFilter').addEventListener('change', function(){
-      const d = this.value;
-      document.querySelectorAll('#apptTable tbody tr').forEach(tr=>{
-        const ok = !d || (tr.dataset.date===d);
-        tr.style.display = ok ? '' : 'none';
-      });
+    // اختيار التاريخ
+    dateInput.addEventListener('change', function(){
+      currentDate = this.value || '';
+      applyFilters();
     });
+
+    // مسح التاريخ
+    clearDate.addEventListener('click', function(){
+      dateInput.value = '';
+      currentDate = '';
+      applyFilters();
+    });
+
+    // تهيئة
+    applyFilters();
   </script>
 </body>
 </html>
