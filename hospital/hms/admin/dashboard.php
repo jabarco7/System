@@ -650,10 +650,6 @@ $inquiries_count = mysqli_num_rows(mysqli_query($con, "SELECT * FROM tblcontactu
                 </div>
             </div>
 
-            <!-- التذييل -->
-            <div class="dashboard-footer">
-                نظام إدارة المستشفى &copy; <?php echo date('Y - dashboard.php:666'); ?> - جميع الحقوق محفوظة
-            </div>
         </div>
 
         <!-- زر القائمة الجانبية في الجوال -->

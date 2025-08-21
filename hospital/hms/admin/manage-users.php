@@ -179,7 +179,7 @@ $sql = mysqli_query(
         #sidebar,
         .app-sidebar {
             position: sticky;
-            top: calc(var(--header-h) + 10px);
+            /* top: calc(var(--header-h) + 10px); */
             /* مسافة بسيطة تحت الهيدر */
         }
 

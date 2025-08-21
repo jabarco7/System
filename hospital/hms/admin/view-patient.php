@@ -70,6 +70,61 @@ if (strlen($_SESSION['id']) == 0) {
       .rtl-table thead th { text-align: right; }
       /* عنوان الجدول المدمج */
       .table-title-row td { text-align:center !important; font-size:19px; color:#2d6cdf; font-weight:700; }
+      		:root{
+			/* عدّل الرقمين حسب ارتفاع الهيدر لديك */
+			--header-h: 64px;       /* ارتفاع شريط الهيدر */
+			--sidebar-lift: 10px;   /* مقدار رفع السايدبار للأعلى */
+		}
+
+		html, body { margin:0; padding:0; }
+
+		/* ألغِ أي هامش/حشو علوي من حاويات المحتوى القياسية */
+		.app-content,
+		.main-content,
+		.wrap-content,
+		#container,
+		.container,
+		.container-fluid{
+			margin-top: 0 !important;
+			padding-top: 0 !important;
+		}
+
+		/* عنوان الصفحة (الشريط الأزرق) بدون فراغ علوي */
+		#page-title{
+			margin-top: 0 !important;
+			padding-top: 8px;
+			padding-bottom: 8px;
+		}
+
+		/* أنزل الكارد الأبيض قليلاً لإحساس توازن */
+		.container-fullw.bg-white{
+			margin-top: 8px;
+		}
+
+		/* === رفع/تثبيت السايدبار بدون لمس ملفه === */
+		/* بعض القوالب تستخدم أحد هذه المحددات للسايدبار، فغطّيناها كلها */
+		aside#sidebar.app-sidebar,
+		#sidebar.app-sidebar,
+		#sidebar{
+			position: fixed !important;
+			right: 0;
+			top: calc(var(--header-h) - var(--sidebar-lift)) !important;
+			height: calc(100vh - (var(--header-h) - var(--sidebar-lift))) !important;
+			overflow-y: auto;
+			/* نضمن عدم وجود حشوة علوية داخلية قد تعمل فراغ */
+			padding-top: 0 !important;
+		}
+		#sidebar .user-profile{ margin-top: 0 !important; }
+
+		/* في الشاشات الصغيرة عادة السايدبار يكون أوف-كانفاس؛ لا نرفع */
+		@media (max-width: 991.98px){
+			aside#sidebar.app-sidebar,
+			#sidebar.app-sidebar,
+			#sidebar{
+				top: var(--header-h) !important;
+				height: calc(100vh - var(--header-h)) !important;
+			}
+		}
     </style>
 </head>
 
@@ -94,8 +149,6 @@ if (strlen($_SESSION['id']) == 0) {
                 <div class="container-fluid container-fullw bg-white">
                     <div class="row">
                         <div class="col-md-12">
-                            <h5 class="over-title margin-bottom-15">تفاصيل <span class="text-bold">المريض</span></h5>
-
                             <?php
                             $vid = isset($_GET['viewid']) ? intval($_GET['viewid']) : 0;
                             $ret = mysqli_query($con, "SELECT * FROM tblpatient WHERE ID='$vid'");

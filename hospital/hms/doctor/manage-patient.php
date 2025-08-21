@@ -75,7 +75,7 @@ foreach ($patients as $r) {
       background: linear-gradient(90deg,#3fa7da,#63b2e4);
       color:#fff; border-radius:12px;
       padding:28px 20px; min-height:92px;
-      margin:12px 0 16px; position:relative;
+      margin:20px 20px 16px; position:relative;
       display:flex; align-items:center; justify-content:center;
       box-shadow:0 6px 16px rgba(40,120,180,.15);
     }

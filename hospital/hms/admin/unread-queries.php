@@ -28,6 +28,65 @@ if(strlen($_SESSION['id']==0)) {
 		<link rel="stylesheet" href="assets/css/styles.css">
 		<link rel="stylesheet" href="assets/css/plugins.css">
 		<link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
+	<style>
+				:root{
+			/* عدّل الرقمين حسب ارتفاع الهيدر لديك */
+			--header-h: 64px;       /* ارتفاع شريط الهيدر */
+			--sidebar-lift: 10px;   /* مقدار رفع السايدبار للأعلى */
+		}
+
+		html, body { margin:0; padding:0; }
+
+		/* ألغِ أي هامش/حشو علوي من حاويات المحتوى القياسية */
+		.app-content,
+		.main-content,
+		.wrap-content,
+		#container,
+		.container,
+		.container-fluid{
+			margin-top: 0 !important;
+			padding-top: 0 !important;
+		}
+
+		/* عنوان الصفحة (الشريط الأزرق) بدون فراغ علوي */
+		#page-title{
+			margin-top: 0 !important;
+			padding-top: 8px;
+			padding-bottom: 8px;
+		}
+
+		/* أنزل الكارد الأبيض قليلاً لإحساس توازن */
+		.container-fullw.bg-white{
+			margin-top: 8px;
+		}
+
+		/* === رفع/تثبيت السايدبار بدون لمس ملفه === */
+		/* بعض القوالب تستخدم أحد هذه المحددات للسايدبار، فغطّيناها كلها */
+		aside#sidebar.app-sidebar,
+		#sidebar.app-sidebar,
+		#sidebar{
+			position: fixed !important;
+			right: 0;
+			top: calc(var(--header-h) - var(--sidebar-lift)) !important;
+			height: calc(100vh - (var(--header-h) - var(--sidebar-lift))) !important;
+			overflow-y: auto;
+			/* نضمن عدم وجود حشوة علوية داخلية قد تعمل فراغ */
+			padding-top: 0 !important;
+		}
+		#sidebar .user-profile{ margin-top: 0 !important; }
+
+		/* في الشاشات الصغيرة عادة السايدبار يكون أوف-كانفاس؛ لا نرفع */
+		@media (max-width: 991.98px){
+			aside#sidebar.app-sidebar,
+			#sidebar.app-sidebar,
+			#sidebar{
+				top: var(--header-h) !important;
+				height: calc(100vh - var(--header-h)) !important;
+			}
+		}
+		</style>
+			
+	
 	</head>
 	<body>
 		<div id="app">		
@@ -62,7 +121,6 @@ if(strlen($_SESSION['id']==0)) {
 
 									<div class="row">
 								<div class="col-md-12">
-									<h5 class="over-title margin-bottom-15">إدارة <span class="text-bold">الاستعلامات غير المقروءة</span></h5>
 									<table class="table table-hover" id="sample-table-1">
 										<thead>
 											<tr>

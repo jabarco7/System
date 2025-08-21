@@ -162,7 +162,6 @@ if ($stmt) {
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-
 <head>
     <meta charset="utf-8">
     <title>المستخدم | سجل المواعيد</title>
@@ -179,14 +178,24 @@ if ($stmt) {
     <link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
 
     <style>
+        /* متغيرات عامة */
+        :root{
+          /* لو ارتفاع الهيدر عندك مختلف غيّر الرقم */
+          --header-h: 64px;
+          /* مقدار رفع السايدبار للأعلى */
+          --sidebar-lift: 10px;
+        }
+
+        /* --- تنسيق الصفحة --- */
         body {
             font-family: 'Tajawal', sans-serif;
-            background: #f0f5f9
+            background: #f0f5f9;
+            margin: 0; padding: 0;
         }
 
         .container-narrow {
             max-width: 1000px;
-            margin: 24px auto
+            margin: 0 auto 24px !important; /* بدون هامش علوي */
         }
 
         .page-head {
@@ -194,157 +203,82 @@ if ($stmt) {
             color: #fff;
             border-radius: 12px;
             padding: 16px 18px;
-            margin-bottom: 16px;
-            text-align: center
+            margin: 0 0 16px;
+            text-align: center;
+            margin-top: 46px !important;   /* ارفع الشريط قليل */
+            margin-bottom: 21px !important;/* وانزل المحتوى قليل */
         }
 
         .card-clean {
             background: #fff;
             border-radius: 14px;
             box-shadow: 0 8px 20px rgba(0, 0, 0, .06);
-            padding: 18px
+            padding: 18px;
+            margin-top: 8px !important;
         }
 
-        .table thead th {
-            background: #f5f8fc
+        .table thead th { background: #f5f8fc }
+        .badge-soft { border-radius: 30px; padding: 6px 10px; font-weight: 600 }
+        .badge-active { background: #e6f7ef; color: #0f8f4e; border: 1px solid #bfe9d1 }
+        .badge-user-cancel { background: #fff3cd; color: #856404; border: 1px solid #ffeeba }
+        .badge-doc-cancel { background: #fde2e1; color: #b21f2d; border: 1px solid #f5c6cb }
+        .alert-compact { border-radius: 10px; padding: 10px 12px }
+        .pagination .page-link { border-radius: 8px; margin: 0 3px }
+        .btn-outline-danger { border: 1px solid #dc3545 }
+
+        /* نافذة منبثقة */
+        .rt-modal { position: fixed; inset: 0; z-index: 200000; display: none }
+        .rt-modal.open { display: block }
+        .rt-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.55) }
+        .rt-modal__dialog{
+            position: relative; margin: 8vh auto;
+            width: min(92vw, 680px); max-width: 680px;
+            background:#fff; border-radius:12px; box-shadow:0 12px 40px rgba(0,0,0,.25);
+            display:flex; flex-direction:column; overflow:hidden; direction:rtl; text-align:right;
+            height:auto; max-height:80vh
+        }
+        @media (max-width:576px){ .rt-modal__dialog{ margin:5vh auto; width:94vw; max-height:88vh } }
+        .rt-modal__header,.rt-modal__footer{ padding:12px 16px; border-bottom:1px solid #eee }
+        .rt-modal__footer{ border-bottom:0; border-top:1px solid #eee; display:flex; gap:8px; justify-content:flex-start }
+        .rt-modal__title{ margin:0; font-size:18px; font-weight:700 }
+        .rt-modal__close{ position:absolute; top:8px; left:10px; border:0; background:transparent; font-size:26px; line-height:1; cursor:pointer; color:#333 }
+        .rt-modal__body{ padding:14px 16px; overflow:auto; max-height:calc(80vh - 100px) }
+        .rt-modal-open{ overflow:hidden }
+        .info-label{ color:#555; font-weight:600; min-width:135px; display:inline-block; white-space:nowrap }
+
+        /* إزالة أي إزاحة علوية عامة من الحاويات القياسية */
+        .app-container, .main-content, .app-content, .content-wrapper, .wrap-content{
+          margin-top:0 !important; padding-top:0 !important;
         }
 
-        .badge-soft {
-            border-radius: 30px;
-            padding: 6px 10px;
-            font-weight: 600
+        /* ===== رفع السايدبار قليلاً مع تعويض الارتفاع ===== */
+        /* تنفع مع معظم قوالب HMS (id=sidebar أو .app-sidebar) */
+        aside#sidebar.app-sidebar,
+        #sidebar.app-sidebar,
+        #sidebar{
+          position: fixed !important;
+          right: 0;
+          top: calc(var(--header-h) - var(--sidebar-lift)) !important;
+          height: calc(100vh - (var(--header-h) - var(--sidebar-lift))) !important;
+          overflow-y: auto;
         }
+        /* لو داخل السايدبار قسم بروفايل كان يتحرك، صفّره */
+        #sidebar .user-profile{ margin-top: 0 !important; }
 
-        .badge-active {
-            background: #e6f7ef;
-            color: #0f8f4e;
-            border: 1px solid #bfe9d1
-        }
-
-        .badge-user-cancel {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba
-        }
-
-        .badge-doc-cancel {
-            background: #fde2e1;
-            color: #b21f2d;
-            border: 1px solid #f5c6cb
-        }
-
-        .alert-compact {
-            border-radius: 10px;
-            padding: 10px 12px
-        }
-
-        .pagination .page-link {
-            border-radius: 8px;
-            margin: 0 3px
-        }
-
-        .btn-outline-danger {
-            border: 1px solid #dc3545
-        }
-
-        /* نافذة منبثقة (متوسطة ومحكمة) */
-        .rt-modal {
-            position: fixed;
-            inset: 0;
-            z-index: 200000;
-            display: none
-        }
-
-        .rt-modal.open {
-            display: block
-        }
-
-        .rt-modal__backdrop {
-            position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, .55)
-        }
-
-        .rt-modal__dialog {
-            position: relative;
-            margin: 8vh auto;
-            width: min(92vw, 680px);
-            max-width: 680px;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, .25);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            direction: rtl;
-            text-align: right;
-            height: auto;
-            max-height: 80vh;
-        }
-
-        @media (max-width:576px) {
-            .rt-modal__dialog {
-                margin: 5vh auto;
-                width: 94vw;
-                max-height: 88vh
-            }
-        }
-
-        .rt-modal__header,
-        .rt-modal__footer {
-            padding: 12px 16px;
-            border-bottom: 1px solid #eee
-        }
-
-        .rt-modal__footer {
-            border-bottom: 0;
-            border-top: 1px solid #eee;
-            display: flex;
-            gap: 8px;
-            justify-content: flex-start
-        }
-
-        .rt-modal__title {
-            margin: 0;
-            font-size: 18px;
-            font-weight: 700
-        }
-
-        .rt-modal__close {
-            position: absolute;
-            top: 8px;
-            left: 10px;
-            border: 0;
-            background: transparent;
-            font-size: 26px;
-            line-height: 1;
-            cursor: pointer;
-            color: #333
-        }
-
-        .rt-modal__body {
-            padding: 14px 16px;
-            overflow: auto;
-            max-height: calc(80vh - 100px)
-        }
-
-        .rt-modal-open {
-            overflow: hidden
-        }
-
-        /* RTL داخل المودال */
-        .info-label {
-            color: #555;
-            font-weight: 600;
-            min-width: 135px;
-            display: inline-block;
-            white-space: nowrap
+        /* على الشاشات الصغيرة عادة السايدبار يصير أوف-كانفاس، ما نرفع */
+        @media (max-width: 991.98px){
+          aside#sidebar.app-sidebar,
+          #sidebar.app-sidebar,
+          #sidebar{
+            top: var(--header-h) !important;
+            height: calc(100vh - var(--header-h)) !important;
+          }
         }
     </style>
 </head>
 
 <body>
-    <div id="app">
+    <div class="app-container">
         <?php include('include/header.php'); ?>
         <?php include('include/sidebar.php'); ?>
 
@@ -504,113 +438,59 @@ if ($stmt) {
     <script src="vendor/perfect-scrollbar/perfect-scrollbar.min.js"></script>
     <script src="vendor/switchery/switchery.min.js"></script>
     <script src="assets/js/main.js"></script>
-    <script>
-        jQuery(function() {
-            if (window.Main) Main.init();
-        });
-    </script>
+    <script> jQuery(function(){ if (window.Main) Main.init(); }); </script>
 
     <script>
-        jQuery(function($) {
-            var $overlay = $('#rtApptModal');
-            var $load = $('#ap-loading');
-            var $error = $('#ap-error');
-            var $content = $('#ap-content');
+      jQuery(function($){
+        var $overlay = $('#rtApptModal'),
+            $load = $('#ap-loading'),
+            $error = $('#ap-error'),
+            $content = $('#ap-content'),
+            $apDoc = $('#apDoc'),
+            $apSpec = $('#apSpec'),
+            $apFees = $('#apFees'),
+            $apDate = $('#apDate'),
+            $apTime = $('#apTime'),
+            $apPost = $('#apPost'),
+            $apStatus = $('#apStatus');
 
-            var $apDoc = $('#apDoc');
-            var $apSpec = $('#apSpec');
-            var $apFees = $('#apFees');
-            var $apDate = $('#apDate');
-            var $apTime = $('#apTime');
-            var $apPost = $('#apPost');
-            var $apStatus = $('#apStatus');
+        function openOverlay(){ $('body').addClass('rt-modal-open'); $overlay.addClass('open').attr('aria-hidden','false'); }
+        function closeOverlay(){ $('body').removeClass('rt-modal-open'); $overlay.removeClass('open').attr('aria-hidden','true'); }
+        $(document).on('click','[data-rt-close]',closeOverlay);
+        $(document).on('keydown',function(e){ if(e.key==='Escape') closeOverlay(); });
 
-            function openOverlay() {
-                $('body').addClass('rt-modal-open');
-                $overlay.addClass('open').attr('aria-hidden', 'false');
-            }
-
-            function closeOverlay() {
-                $('body').removeClass('rt-modal-open');
-                $overlay.removeClass('open').attr('aria-hidden', 'true');
-            }
-            $(document).on('click', '[data-rt-close]', closeOverlay);
-            $(document).on('keydown', function(e) {
-                if (e.key === 'Escape') closeOverlay();
-            });
-
-            function resetModal() {
-                $load.show();
-                $error.hide().text('');
-                $content.hide();
-                $apDoc.text('');
-                $apSpec.text('');
-                $apFees.text('');
-                $apDate.text('');
-                $apTime.text('');
-                $apPost.text('');
-                $apStatus.removeClass('badge-active badge-user-cancel badge-doc-cancel').text('');
-            }
-
-            function statusLabel(u, d) {
-                if (u == 1 && d == 1) return {
-                    cls: 'badge-active',
-                    txt: 'نشط'
-                };
-                if (u == 0 && d == 1) return {
-                    cls: 'badge-user-cancel',
-                    txt: 'أُلغي بواسطتك'
-                };
-                return {
-                    cls: 'badge-doc-cancel',
-                    txt: 'أُلغي من الطبيب'
-                };
-            }
-
-            function showAppt(id) {
-                resetModal();
-                openOverlay();
-
-                $.getJSON(window.location.pathname, {
-                        ajax: 'appt',
-                        id: id,
-                        _: Date.now()
-                    })
-                    .done(function(json) {
-                        if (!json.ok) {
-                            throw new Error(json.msg || 'تعذر جلب البيانات');
-                        }
-                        var d = json.data || {};
-                        $apDoc.text(d.docname || '');
-                        $apSpec.text(d.doctorSpecialization || '');
-                        $apFees.text(d.consultancyFees || '');
-                        $apDate.text(d.appointmentDate || '');
-                        $apTime.text(d.appointmentTime || '');
-                        $apPost.text(d.postingDate || '');
-
-                        var st = statusLabel(parseInt(d.userStatus, 10), parseInt(d.doctorStatus, 10));
-                        $apStatus.addClass(st.cls).text(st.txt);
-
-                        $load.hide();
-                        $content.show();
-                    })
-                    .fail(function(xhr) {
-                        $load.hide();
-                        var msg = 'حدث خطأ غير متوقع';
-                        try {
-                            var j = JSON.parse(xhr.responseText);
-                            if (j && j.msg) msg = j.msg;
-                        } catch (e) {}
-                        $error.text(msg).show();
-                    });
-            }
-
-            $(document).on('click', '.btn-view', function() {
-                var id = $(this).data('id');
-                showAppt(id);
-            });
-        });
+        function resetModal(){
+          $load.show(); $error.hide().text(''); $content.hide();
+          $apDoc.text(''); $apSpec.text(''); $apFees.text(''); $apDate.text(''); $apTime.text(''); $apPost.text('');
+          $apStatus.removeClass('badge-active badge-user-cancel badge-doc-cancel').text('');
+        }
+        function statusLabel(u,d){
+          if(u==1 && d==1) return {cls:'badge-active', txt:'نشط'};
+          if(u==0 && d==1) return {cls:'badge-user-cancel', txt:'أُلغي بواسطتك'};
+          return {cls:'badge-doc-cancel', txt:'أُلغي من الطبيب'};
+        }
+        function showAppt(id){
+          resetModal(); openOverlay();
+          $.getJSON(window.location.pathname, {ajax:'appt', id:id, _:Date.now()})
+           .done(function(json){
+              if(!json.ok) throw new Error(json.msg||'تعذر جلب البيانات');
+              var d=json.data||{};
+              $apDoc.text(d.docname||''); $apSpec.text(d.doctorSpecialization||'');
+              $apFees.text(d.consultancyFees||''); $apDate.text(d.appointmentDate||'');
+              $apTime.text(d.appointmentTime||''); $apPost.text(d.postingDate||'');
+              var st=statusLabel(parseInt(d.userStatus,10), parseInt(d.doctorStatus,10));
+              $apStatus.addClass(st.cls).text(st.txt);
+              $load.hide(); $content.show();
+           })
+           .fail(function(xhr){
+              $load.hide();
+              var msg='حدث خطأ غير متوقع';
+              try{ var j=JSON.parse(xhr.responseText); if(j&&j.msg) msg=j.msg; }catch(e){}
+              $error.text(msg).show();
+           });
+        }
+        $(document).on('click','.btn-view',function(){ showAppt($(this).data('id')); });
+      });
     </script>
 </body>
-
 </html>

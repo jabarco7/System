@@ -2,17 +2,18 @@
 session_start();
 error_reporting(0);
 include('include/config.php');
-if(strlen($_SESSION['id']==0)) {
- header('location:logout.php');
-  } else{
+if (strlen($_SESSION['id'] == 0)) {
+	header('location:logout.php');
+} else {
 
 
 ?>
-<!DOCTYPE html>
-<html lang="en">
+	<!DOCTYPE html>
+	<html lang="en">
+
 	<head>
 		<title>المسؤول | إدارة استعلامات القراءة</title>
-		
+
 		<link href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
 		<link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
@@ -27,23 +28,92 @@ if(strlen($_SESSION['id']==0)) {
 		<link rel="stylesheet" href="assets/css/styles.css">
 		<link rel="stylesheet" href="assets/css/plugins.css">
 		<link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
+		<style>
+			:root {
+				/* عدّل الرقمين حسب ارتفاع الهيدر لديك */
+				--header-h: 64px;
+				/* ارتفاع شريط الهيدر */
+				--sidebar-lift: 10px;
+				/* مقدار رفع السايدبار للأعلى */
+			}
+
+			html,
+			body {
+				margin: 0;
+				padding: 0;
+			}
+
+			/* ألغِ أي هامش/حشو علوي من حاويات المحتوى القياسية */
+			.app-content,
+			.main-content,
+			.wrap-content,
+			#container,
+			.container,
+			.container-fluid {
+				margin-top: 0 !important;
+				padding-top: 0 !important;
+			}
+
+			/* عنوان الصفحة (الشريط الأزرق) بدون فراغ علوي */
+			#page-title {
+				margin-top: 0 !important;
+				padding-top: 8px;
+				padding-bottom: 8px;
+			}
+
+			/* أنزل الكارد الأبيض قليلاً لإحساس توازن */
+			.container-fullw.bg-white {
+				margin-top: 8px;
+			}
+
+			/* === رفع/تثبيت السايدبار بدون لمس ملفه === */
+			/* بعض القوالب تستخدم أحد هذه المحددات للسايدبار، فغطّيناها كلها */
+			aside#sidebar.app-sidebar,
+			#sidebar.app-sidebar,
+			#sidebar {
+				position: fixed !important;
+				right: 0;
+				top: calc(var(--header-h) - var(--sidebar-lift)) !important;
+				height: calc(100vh - (var(--header-h) - var(--sidebar-lift))) !important;
+				overflow-y: auto;
+				/* نضمن عدم وجود حشوة علوية داخلية قد تعمل فراغ */
+				padding-top: 0 !important;
+			}
+
+			#sidebar .user-profile {
+				margin-top: 0 !important;
+			}
+
+			/* في الشاشات الصغيرة عادة السايدبار يكون أوف-كانفاس؛ لا نرفع */
+			@media (max-width: 991.98px) {
+
+				aside#sidebar.app-sidebar,
+				#sidebar.app-sidebar,
+				#sidebar {
+					top: var(--header-h) !important;
+					height: calc(100vh - var(--header-h)) !important;
+				}
+			}
+		</style>
+
 	</head>
+
 	<body>
-		<div id="app">		
-<?php include('include/sidebar.php');?>
+		<div id="app">
+			<?php include('include/sidebar.php'); ?>
 			<div class="app-content">
-				
-						<?php include('include/header.php');?>
-					
+
+				<?php include('include/header.php'); ?>
+
 				<!-- end: TOP NAVBAR -->
-				<div class="main-content" >
+				<div class="main-content">
 					<div class="wrap-content container" id="container">
 						<!-- start: PAGE TITLE -->
 						<section id="page-title">
 							<div class="row">
 								<div class="col-sm-8">
 									<h1 class="mainTitle">المسؤول | إدارة استعلامات القراءة</h1>
-																	</div>
+								</div>
 								<ol class="breadcrumb">
 									<li>
 										<span>المسؤول</span>
@@ -57,11 +127,11 @@ if(strlen($_SESSION['id']==0)) {
 						<!-- end: PAGE TITLE -->
 						<!-- start: BASIC EXAMPLE -->
 						<div class="container-fluid container-fullw bg-white">
-						
 
-									<div class="row">
+
+							<div class="row">
 								<div class="col-md-12">
-									<h5 class="over-title margin-bottom-15">إدارة <span class="text-bold">قراءة الاستعلامات</span></h5>
+
 									<table class="table table-hover" id="sample-table-1">
 										<thead>
 											<tr>
@@ -72,81 +142,81 @@ if(strlen($_SESSION['id']==0)) {
 												<th>الرسالة </th>
 												<th>تاريخ الاستعلام</th>
 												<th>الإجراء</th>
-												
+
 											</tr>
 										</thead>
 										<tbody>
-<?php
-$sql=mysqli_query($con,"select * from tblcontactus where IsRead is not null");
-$cnt=1;
-while($row=mysqli_fetch_array($sql))
-{
-?>
+											<?php
+											$sql = mysqli_query($con, "select * from tblcontactus where IsRead is not null");
+											$cnt = 1;
+											while ($row = mysqli_fetch_array($sql)) {
+											?>
 
-											<tr>
-												<td class="center"><?php echo $cnt;?>.</td>
-												<td class="hidden-xs"><?php echo $row['fullname'];?></td>
-												<td><?php echo $row['email'];?></td>
-												<td><?php echo $row['contactno'];?></td>
-												<td><?php echo $row['message'];?></td>
-												<td><?php echo $row['PostingDate'];?></td>
-												
-												<td >
-												<div class="visible-md visible-lg hidden-sm hidden-xs">
-							<a href="query-details.php?id=<?php echo $row['id'];?>" class="btn btn-transparent btn-lg" title="View Details"><i class="fa fa-file"></i></a>
-												</div>
-												<div class="visible-xs visible-sm hidden-md hidden-lg">
-													<div class="btn-group" dropdown is-open="status.isopen">
-														<button type="button" class="btn btn-primary btn-o btn-sm dropdown-toggle" dropdown-toggle>
-															<i class="fa fa-cog"></i>&nbsp;<span class="caret"></span>
-														</button>
-														<ul class="dropdown-menu pull-right dropdown-light" role="menu">
-															<li>
-																<a href="#">
-																	تعديل
-																</a>
-															</li>
-															<li>
-																<a href="#">
-																	مشاركة
-																</a>
-															</li>
-															<li>
-																<a href="#">
-																	حذف
-																</a>
-															</li>
-														</ul>
-													</div>
-												</div></td>
-											</tr>
-											
-											<?php 
-$cnt=$cnt+1;
-											 }?>
-											
-											
+												<tr>
+													<td class="center"><?php echo $cnt; ?>.</td>
+													<td class="hidden-xs"><?php echo $row['fullname']; ?></td>
+													<td><?php echo $row['email']; ?></td>
+													<td><?php echo $row['contactno']; ?></td>
+													<td><?php echo $row['message']; ?></td>
+													<td><?php echo $row['PostingDate']; ?></td>
+
+													<td>
+														<div class="visible-md visible-lg hidden-sm hidden-xs">
+															<a href="query-details.php?id=<?php echo $row['id']; ?>" class="btn btn-transparent btn-lg" title="View Details"><i class="fa fa-file"></i></a>
+														</div>
+														<div class="visible-xs visible-sm hidden-md hidden-lg">
+															<div class="btn-group" dropdown is-open="status.isopen">
+																<button type="button" class="btn btn-primary btn-o btn-sm dropdown-toggle" dropdown-toggle>
+																	<i class="fa fa-cog"></i>&nbsp;<span class="caret"></span>
+																</button>
+																<ul class="dropdown-menu pull-right dropdown-light" role="menu">
+																	<li>
+																		<a href="#">
+																			تعديل
+																		</a>
+																	</li>
+																	<li>
+																		<a href="#">
+																			مشاركة
+																		</a>
+																	</li>
+																	<li>
+																		<a href="#">
+																			حذف
+																		</a>
+																	</li>
+																</ul>
+															</div>
+														</div>
+													</td>
+												</tr>
+
+											<?php
+												$cnt = $cnt + 1;
+											} ?>
+
+
 										</tbody>
 									</table>
 								</div>
 							</div>
-								</div>
-							</div>
 						</div>
-						<!-- end: BASIC EXAMPLE -->
-						<!-- end: SELECT BOXES -->
-						
 					</div>
 				</div>
+				<!-- end: BASIC EXAMPLE -->
+				<!-- end: SELECT BOXES -->
+
 			</div>
-			<!-- start: FOOTER -->
-	<?php include('include/footer.php');?>
-			<!-- end: FOOTER -->
-		
-			<!-- start: SETTINGS -->
-	<?php include('include/setting.php');?>
-			
-			<!-- end: SETTINGS -->
+		</div>
+		</div>
+		<!-- start: FOOTER -->
+		<?php include('include/footer.php'); ?>
+		<!-- end: FOOTER -->
+
+		<!-- start: SETTINGS -->
+		<?php include('include/setting.php'); ?>
+
+		<!-- end: SETTINGS -->
 		</div>
 		<!-- start: MAIN JAVASCRIPTS -->
 		<script src="vendor/jquery/jquery.min.js"></script>
@@ -179,5 +249,6 @@ $cnt=$cnt+1;
 		<!-- end: JavaScript Event Handlers for this page -->
 		<!-- end: CLIP-TWO JAVASCRIPTS -->
 	</body>
-</html>
+
+	</html>
 <?php } ?>
