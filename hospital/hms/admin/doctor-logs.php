@@ -407,13 +407,13 @@ $sql = mysqli_query($con, "SELECT * FROM doctorslog ORDER BY loginTime DESC LIMI
                                     $status_text = ($status == 1) ? 'نجاح' : 'فشل';
                             ?>
                                     <tr>
-                                        <td class="textcenter - doctor-logs.php:410"><?php echo $cnt; ?></td>
+                                        <td class="textcenter "><?php echo $cnt; ?></td>
                                         <td><?php echo htmlspecialchars($uid); ?></td>
                                         <td><?php echo htmlspecialchars($username); ?></td>
                                         <td><?php echo htmlspecialchars($userip); ?></td>
                                         <td><?php echo htmlspecialchars($loginTime); ?></td>
                                         <td><?php echo htmlspecialchars($logout); ?></td>
-                                        <td class="textcenter - doctor-logs.php:416"><span class="status-badge <?php echo $status_class; ?>"><?php echo $status_text; ?></span></td>
+                                        <td class="textcenter "><span class="status-badge <?php echo $status_class; ?>"><?php echo $status_text; ?></span></td>
                                     </tr>
                             <?php
                                     $cnt++;

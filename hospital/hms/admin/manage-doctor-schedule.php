@@ -17,7 +17,7 @@ $doctors=[]; $rs=mysqli_query($con,"SELECT id,doctorName,specilization FROM doct
 while($r=mysqli_fetch_assoc($rs)) $doctors[]=$r;
 
 /* أدوات */
-$days=[0=>'الأحد',1=>'الاثنين',2=>'الثلاثاء',3=>'الأربعاء',4=>'الخميس',5=>'الجمعة',6=>'السبت'];
+$days=[0=>'الجمعة',1=>'الخميس',2=>'الأربعاء',3=>'الثلاثاء',4=>'الأثنين',5=>'الأحد',6=>'السبت'];
 function ok_time($t){ return (bool)preg_match('/^\d{2}:\d{2}$/',$t); }
 function flash($m){ $_SESSION['msg']=$m; }
 

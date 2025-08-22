@@ -366,11 +366,10 @@ if (strlen($_SESSION['id']) == 0) {
     </head>
 
     <body>
-        <?php include('include/header.php'); ?>
-        <?php include('include/sidebar.php'); ?>
-
-        <div class="app-content">
-            <div class="main-content">
+    <?php include('include/sidebar.php'); ?>
+    <?php include('include/header.php'); ?>
+    <div class="main-content">
+        <div class="container ">
                 <div class="container-fluid">
                     <div class="page-header">
                         <div class="d-flex justify-content-between align-items-center">
@@ -516,7 +515,6 @@ if (strlen($_SESSION['id']) == 0) {
             </div>
         </div>
 
-        <?php include('include/setting.php'); ?>
 
         <!-- Modal: بيانات المريض -->
         <div class="modal fade" id="patientModal" tabindex="-1" aria-hidden="true" dir="rtl">

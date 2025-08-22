@@ -505,7 +505,7 @@ $sql = mysqli_query(
         </div>
     </div>
 
-    <?php include('include/setting.php'); ?>
+   
 
     <!-- Bootstrap Modal: Edit User -->
     <div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true" dir="rtl">

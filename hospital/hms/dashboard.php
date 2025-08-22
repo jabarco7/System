@@ -152,7 +152,7 @@ function getDoctorSchedule(mysqli $con, $doctorId)
 
 /* ===== إنشاء حجز (POST) ===== */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book_submit'])) {
-  $back = 'book-appointment.php'; // اسم الملف الحالي
+  $back = 'appointment-history.php'; // اسم الملف الحالي
   if (!hash_equals($_SESSION['csrf'], $_POST['csrf'] ?? '')) {
     $_SESSION['msg'] = 'فشل التحقق الأمني. أعد المحاولة.';
     header("Location: $back");
@@ -819,206 +819,210 @@ if ($stmt = mysqli_prepare(
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script>
-    (function($) {
-      const $modal = $('#bookModal');
-      const dayNames = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-      let allowedDays = []; // أرقام الأيام المتاحة 0..6
+(function($) {
+  const $modal = $('#bookModal');
+  const dayNames = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  let allowedDays = []; // أرقام الأيام المتاحة 0..6
 
-      const openModal = (prefSpec = '') => {
-        $('body').addClass('rt-modal-open');
-        $modal.addClass('open').attr('aria-hidden', 'false');
-        loadSpecs().then(() => {
-          if (prefSpec) $('#bf-spec').val(prefSpec).trigger('change');
-        });
-      };
-      const closeModal = () => {
-        $('body').removeClass('rt-modal-open');
-        $modal.removeClass('open').attr('aria-hidden', 'true');
-        resetForm();
-      };
-      $(document).on('click', '[data-close]', closeModal);
-      $(document).on('click', '.js-open-book', function(e) {
-        e.preventDefault();
-        openModal($(this).data('spec') || '');
-      });
+  const openModal = (prefSpec = '') => {
+    $('body').addClass('rt-modal-open');
+    $modal.addClass('open').attr('aria-hidden', 'false');
+    loadSpecs().then(() => {
+      if (prefSpec) $('#bf-spec').val(prefSpec).trigger('change');
+    });
+  };
+  const closeModal = () => {
+    $('body').removeClass('rt-modal-open');
+    $modal.removeClass('open').attr('aria-hidden', 'true');
+    resetForm();
+  };
+  $(document).on('click', '[data-close]', closeModal);
+  $(document).on('click', '.js-open-book', function(e) {
+    e.preventDefault();
+    openModal($(this).data('spec') || '');
+  });
 
-      function resetForm() {
-        $('#bf-spec').val('');
-        $('#bf-doctor').prop('disabled', true).html('<option value="">— اختر الطبيب —</option>');
-        $('#bf-day').prop('disabled', true).html('<option value="">— اختر اليوم —</option>');
-        $('#bf-time').prop('disabled', true).html('<option value="">— اختر الوقت —</option>');
-        $('#bf-fees').val('');
-        $('#bf-spec-ro').val('');
-        $('#bf-date').val('');
-        $('#bf-date-human').text('');
-        $('#schedList').empty();
-        allowedDays = [];
+  function resetForm() {
+    $('#bf-spec').val('');
+    $('#bf-doctor').prop('disabled', true).html('<option value="">— اختر الطبيب —</option>');
+    $('#bf-day').prop('disabled', true).html('<option value="">— اختر اليوم —</option>');
+    $('#bf-time').prop('disabled', true).html('<option value="">— اختر الوقت —</option>');
+    $('#bf-fees').val('');
+    $('#bf-spec-ro').val('');
+    $('#bf-date').val('');
+    $('#bf-date-human').text('');
+    $('#schedList').empty();
+    allowedDays = [];
+  }
+
+  // تحميل التخصصات
+  let cachedSpecs = null;
+
+  function loadSpecs() {
+    if (cachedSpecs) {
+      fillSpecs(cachedSpecs);
+      return Promise.resolve();
+    }
+    return $.getJSON('?ajax=specs').then(j => {
+      if (j.ok) {
+        cachedSpecs = j.data;
+        fillSpecs(j.data);
       }
+    });
+  }
 
-      // تحميل التخصصات
-      let cachedSpecs = null;
+  function fillSpecs(data) {
+    const $s = $('#bf-spec').empty().append('<option value="">— اختر التخصص —</option>');
+    data.forEach(sp => $s.append('<option value="' + escapeHtml(sp) + '">' + escapeHtml(sp) + '</option>'));
+  }
 
-      function loadSpecs() {
-        if (cachedSpecs) {
-          fillSpecs(cachedSpecs);
-          return Promise.resolve();
-        }
-        return $.getJSON('?ajax=specs').then(j => {
-          if (j.ok) {
-            cachedSpecs = j.data;
-            fillSpecs(j.data);
-          }
-        });
-      }
+  // عند اختيار التخصص
+  $('#bf-spec').on('change', function() {
+    const spec = $(this).val();
+    $('#bf-spec-ro').val(spec || '');
+    $('#bf-doctor').prop('disabled', true).html('<option value="">— اختر الطبيب —</option>');
+    $('#bf-day').prop('disabled', true).html('<option value="">— اختر اليوم —</option>');
+    $('#bf-time').prop('disabled', true).html('<option value="">— اختر الوقت —</option>');
+    $('#bf-fees').val('');
+    $('#bf-date').val('');
+    $('#bf-date-human').text('');
+    $('#schedList').empty();
+    allowedDays = [];
+    if (!spec) return;
 
-      function fillSpecs(data) {
-        const $s = $('#bf-spec').empty().append('<option value="">— اختر التخصص —</option>');
-        data.forEach(sp => $s.append('<option value="' + escapeHtml(sp) + '">' + escapeHtml(sp) + '</option>'));
-      }
-
-      // عند اختيار التخصص
-      $('#bf-spec').on('change', function() {
-        const spec = $(this).val();
-        $('#bf-spec-ro').val(spec || '');
-        $('#bf-doctor').prop('disabled', true).html('<option value="">— اختر الطبيب —</option>');
-        $('#bf-day').prop('disabled', true).html('<option value="">— اختر اليوم —</option>');
-        $('#bf-time').prop('disabled', true).html('<option value="">— اختر الوقت —</option>');
-        $('#bf-fees').val('');
-        $('#bf-date').val('');
-        $('#bf-date-human').text('');
-        $('#schedList').empty();
-        allowedDays = [];
-        if (!spec) return;
-
-        $.getJSON('?ajax=doctors_by_spec', {
-          spec
-        }).done(j => {
-          if (j.ok) {
-            const $d = $('#bf-doctor').prop('disabled', j.data.length === 0);
-            if (j.data.length === 0) $d.html('<option value="">لا يوجد أطباء لهذا التخصص</option>');
-            else {
-              $d.html('<option value="">— اختر الطبيب —</option>');
-              j.data.forEach(row => $d.append('<option value="' + row.id + '">' + escapeHtml(row.doctorName) + '</option>'));
-            }
-          }
-        });
-      });
-
-      // عند اختيار الطبيب
-      $('#bf-doctor').on('change', function() {
-        const id = $(this).val();
-        $('#bf-day').prop('disabled', !id).html('<option value="">— اختر اليوم —</option>');
-        $('#bf-time').prop('disabled', true).html('<option value="">— اختر الوقت —</option>');
-        $('#bf-fees').val('');
-        $('#bf-date').val('');
-        $('#bf-date-human').text('');
-        $('#schedList').empty();
-        allowedDays = [];
-        if (!id) return;
-
-        $.getJSON('?ajax=doctor_info', {
-          id
-        }).done(j => {
-          if (!j.ok) return;
-          // الرسوم (غير قابلة للتعديل)
-          $('#bf-fees').val(j.data.consultancyFees || '');
-
-          // رسم الدوام + بناء قائمة الأيام المتاحة
-          const daysObj = (j.schedule && j.schedule.days) ? j.schedule.days : {};
-          renderSchedule(daysObj);
-
-          allowedDays = Object.keys(daysObj).map(n => parseInt(n, 10)).sort((a, b) => a - b);
-          const $day = $('#bf-day');
-          if (allowedDays.length) {
-            $day.append(allowedDays.map(d => '<option value="' + d + '">' + dayNames[d] + '</option>').join(''))
-              .prop('disabled', false);
-          } else {
-            $day.html('<option value="">لا يوجد دوام مُسجّل</option>').prop('disabled', true);
-          }
-        });
-      });
-
-      // عند اختيار يوم
-      $('#bf-day').on('change', function() {
-        const dow = $(this).val() === '' ? null : parseInt($(this).val(), 10);
-        $('#bf-time').prop('disabled', true).html('<option value="">— اختر الوقت —</option>');
-        $('#bf-date').val('');
-        $('#bf-date-human').text('');
-        if (dow === null || isNaN(dow)) return;
-
-        // احسب أقرب تاريخ يوافق هذا اليوم
-        const dateStr = nextDateForDay(dow); // YYYY-MM-DD
-        $('#bf-date').val(dateStr);
-        $('#bf-date-human').text(humanDate(dateStr));
-
-        // حمّل الأوقات المتاحة لهذا التاريخ
-        const id = $('#bf-doctor').val();
-        $('#bf-time').html('<option value="">— جاري التحميل —</option>');
-        $.getJSON('?ajax=slots', {
-          id,
-          date: dateStr
-        }).done(s => {
-          const $t = $('#bf-time').empty();
-          if (!s.ok || s.data.length === 0) {
-            $t.append('<option value="">لا توجد أوقات متاحة</option>').prop('disabled', true);
-          } else {
-            $t.append('<option value="">— اختر الوقت —</option>');
-            s.data.forEach(tm => $t.append('<option value="' + tm + '">' + tm + '</option>'));
-            $t.prop('disabled', false);
-          }
-        });
-      });
-
-      // أدوات
-      function nextDateForDay(dow) {
-        const d = new Date();
-        d.setHours(0, 0, 0, 0);
-        let diff = (dow - d.getDay() + 7) % 7; // أقرب نفس اليوم (اليوم أو القادم)
-        const target = new Date(d);
-        target.setDate(d.getDate() + diff);
-        return target.toISOString().slice(0, 10);
-      }
-
-      function humanDate(yyyy_mm_dd) {
-        const d = new Date(yyyy_mm_dd + 'T00:00:00');
-        const dn = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'][d.getDay()];
-        return dn + ' ' + d.toLocaleDateString('ar-EG');
-      }
-
-      function renderSchedule(daysObj) {
-        const $box = $('#schedList').empty();
-        const names = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-        if (!Object.keys(daysObj || {}).length) {
-          $box.html('<div class="muted">لا يوجد دوام مُسجّل لهذا الطبيب.</div>');
-          return;
-        }
-        for (let i = 0; i < 7; i++) {
-          if (daysObj[i]) {
-            // لو في أكثر من فترة لليوم
-            const spans = daysObj[i].map(p => ('<strong>' + p.start + '</strong> — <strong>' + p.end + '</strong> (' + (p.slot || 30) + ' د)'));
-            $box.append('<div class="day on"><div>' + names[i] + '</div><div>' + spans.join(' ، ') + '</div></div>');
-          } else {
-            $box.append('<div class="day"><div>' + names[i] + '</div><div class="muted">إجازة</div></div>');
-          }
+    $.getJSON('?ajax=doctors_by_spec', {
+      spec
+    }).done(j => {
+      if (j.ok) {
+        const $d = $('#bf-doctor').prop('disabled', j.data.length === 0);
+        if (j.data.length === 0) $d.html('<option value="">لا يوجد أطباء لهذا التخصص</option>');
+        else {
+          $d.html('<option value="">— اختر الطبيب —</option>');
+          j.data.forEach(row => $d.append('<option value="' + row.id + '">' + escapeHtml(row.doctorName) + '</option>'));
         }
       }
+    });
+  });
 
-      function escapeHtml(s) {
-        return String(s).replace(/[&<>"']/g, m => ({
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;',
-          '"': '&quot;',
-          "'": '&#039;'
-        } [m]));
+  // عند اختيار الطبيب
+  $('#bf-doctor').on('change', function() {
+    const id = $(this).val();
+    $('#bf-day').prop('disabled', !id).html('<option value="">— اختر اليوم —</option>');
+    $('#bf-time').prop('disabled', true).html('<option value="">— اختر الوقت —</option>');
+    $('#bf-fees').val('');
+    $('#bf-date').val('');
+    $('#bf-date-human').text('');
+    $('#schedList').empty();
+    allowedDays = [];
+    if (!id) return;
+
+    $.getJSON('?ajax=doctor_info', {
+      id
+    }).done(j => {
+      if (!j.ok) return;
+      // الرسوم (غير قابلة للتعديل)
+      $('#bf-fees').val(j.data.consultancyFees || '');
+
+      // رسم الدوام + بناء قائمة الأيام المتاحة
+      const daysObj = (j.schedule && j.schedule.days) ? j.schedule.days : {};
+      renderSchedule(daysObj);
+
+      allowedDays = Object.keys(daysObj).map(n => parseInt(n, 10)).sort((a, b) => a - b);
+      const $day = $('#bf-day');
+      if (allowedDays.length) {
+        $day.append(allowedDays.map(d => '<option value="' + d + '">' + dayNames[d] + '</option>').join(''))
+          .prop('disabled', false);
+      } else {
+        $day.html('<option value="">لا يوجد دوام مُسجّل</option>').prop('disabled', true);
       }
+    });
+  });
 
-      // إغلاق بـ ESC
-      $(document).on('keydown', e => {
-        if (e.key === 'Escape') $modal.removeClass('open');
-      });
+  // عند اختيار يوم
+  $('#bf-day').on('change', function() {
+    const dow = $(this).val() === '' ? null : parseInt($(this).val(), 10);
+    $('#bf-time').prop('disabled', true).html('<option value="">— اختر الوقت —</option>');
+    $('#bf-date').val('');
+    $('#bf-date-human').text('');
+    if (dow === null || isNaN(dow)) return;
 
-    })(jQuery);
+    // احسب أقرب تاريخ يوافق هذا اليوم
+    const dateStr = nextDateForDay(dow); // YYYY-MM-DD
+    $('#bf-date').val(dateStr);
+    $('#bf-date-human').text(humanDate(dateStr));
+
+    // حمّل الأوقات المتاحة لهذا التاريخ
+    const id = $('#bf-doctor').val();
+    $('#bf-time').html('<option value="">— جاري التحميل —</option>');
+    $.getJSON('?ajax=slots', {
+      id,
+      date: dateStr
+    }).done(s => {
+      const $t = $('#bf-time').empty();
+      if (!s.ok || s.data.length === 0) {
+        $t.append('<option value="">لا توجد أوقات متاحة</option>').prop('disabled', true);
+      } else {
+        $t.append('<option value="">— اختر الوقت —</option>');
+        s.data.forEach(tm => $t.append('<option value="' + tm + '">' + tm + '</option>'));
+        $t.prop('disabled', false);
+      }
+    });
+  });
+
+  // أدوات
+  function nextDateForDay(dow) {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    const diff = (dow - d.getDay() + 7) % 7; // أقرب نفس اليوم (اليوم أو القادم)
+    const target = new Date(d);
+    target.setDate(d.getDate() + diff);
+    // إرجاع التاريخ المحلي بصيغة YYYY-MM-DD بدون انزياح المنطقة الزمنية
+    const y = target.getFullYear();
+    const m = String(target.getMonth() + 1).padStart(2, '0');
+    const day = String(target.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function humanDate(yyyy_mm_dd) {
+    const d = new Date(yyyy_mm_dd + 'T00:00:00');
+    const dn = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'][d.getDay()];
+    return dn + ' ' + d.toLocaleDateString('ar-EG');
+  }
+
+  function renderSchedule(daysObj) {
+    const $box = $('#schedList').empty();
+    const names = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    if (!Object.keys(daysObj || {}).length) {
+      $box.html('<div class="muted">لا يوجد دوام مُسجّل لهذا الطبيب.</div>');
+      return;
+    }
+    for (let i = 0; i < 7; i++) {
+      if (daysObj[i]) {
+        // لو في أكثر من فترة لليوم
+        const spans = daysObj[i].map(p => ('<strong>' + p.start + '</strong> — <strong>' + p.end + '</strong> (' + (p.slot || 30) + ' د)'));
+        $box.append('<div class="day on"><div>' + names[i] + '</div><div>' + spans.join(' ، ') + '</div></div>');
+      } else {
+        $box.append('<div class="day"><div>' + names[i] + '</div><div class="muted">إجازة</div></div>');
+      }
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, m => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    } [m]));
+  }
+
+  // إغلاق بـ ESC
+  $(document).on('keydown', e => {
+    if (e.key === 'Escape') $modal.removeClass('open');
+  });
+
+})(jQuery);
   </script>
 </body>
 
