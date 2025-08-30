@@ -249,8 +249,8 @@
                         إدارة المستخدمين</a></li>
                 <li class="nav-item mb-1"><a href="manage-patient.php" class="nav-link"><i
                             class="fas fa-user-injured me-2"></i> إدارة المرضى</a></li>
-                <li class="nav-item mb-1"><a href="appointment-history.php" class="nav-link"><i
-                            class="fas fa-history me-2"></i> تاريخ المواعيد</a></li>
+                
+                            
                 <li class="nav-item mb-1">
                     <a data-bs-toggle="collapse" href="#queriesMenu" class="nav-link d-flex align-items-center">
                         <i class="fas fa-comments me-2"></i> استعلامات الاتصال

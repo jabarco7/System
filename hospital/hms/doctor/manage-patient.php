@@ -11,44 +11,48 @@ if (!isset($_SESSION['id']) || strlen($_SESSION['id']) == 0) {
 
 $docid = (int)$_SESSION['id'];
 
-/* المرضى المرتبطون بحجوزات هذا الطبيب (+ محاولة ربطهم بـ tblpatient) */
+/* ===================== جلب المرضى من tblpatient ===================== */
+/* نجلب كل السجلات التابعة لهذا الطبيب مباشرةً من tblpatient */
 $patients = [];
-if ($st = $con->prepare("
+$sql = "
   SELECT
-    u.id                                        AS uid,
-    p.ID                                        AS pid,
-    p.Docid                                     AS pDocid,
-    COALESCE(p.PatientName, u.fullName)         AS PatientName,
-    p.PatientContno,
-    COALESCE(p.PatientEmail, u.email)           AS PatientEmail,
-    COALESCE(p.PatientGender, u.gender)         AS PatientGender,
-    p.PatientAdd,
-    p.PatientAge,
-    p.PatientMedhis,
-    p.CreationDate,
-    p.UpdationDate,
-    MAX(CONCAT(a.appointmentDate,' ',a.appointmentTime)) AS last_visit
-  FROM appointment a
-  JOIN users u ON u.id = a.userId
-  LEFT JOIN tblpatient p
-    ON p.PatientEmail = u.email AND p.Docid = ?
-  WHERE a.doctorId = ?
-  GROUP BY u.id, p.ID, p.Docid, PatientName, p.PatientContno, PatientEmail,
-           PatientGender, p.PatientAdd, p.PatientAge, p.PatientMedhis,
-           p.CreationDate, p.UpdationDate
-  ORDER BY last_visit DESC, pid DESC
-")) {
-  $st->bind_param('ii', $docid, $docid);
+    ID                AS pid,           -- رقم المريض في الجدول
+    Docid,
+    PatientName,
+    PatientContno,
+    PatientEmail,
+    PatientGender,
+    PatientAdd,
+    PatientAge,
+    PatientMedhis,
+    CreationDate,
+    UpdationDate
+  FROM tblpatient
+  WHERE Docid = ?
+  ORDER BY COALESCE(UpdationDate, CreationDate) DESC, ID DESC
+";
+if ($st = $con->prepare($sql)) {
+  $st->bind_param('i', $docid);
   $st->execute();
   $res = $st->get_result();
-  while ($row = $res->fetch_assoc()) $patients[] = $row;
+  while ($row = $res->fetch_assoc()) {
+    // توحيد مسمى الجنس (male/female -> ذكر/أنثى)
+    $g = trim((string)($row['PatientGender'] ?? ''));
+    $g_l = mb_strtolower($g, 'UTF-8');
+    if ($g_l === 'male')   $row['PatientGender'] = 'ذكر';
+    elseif ($g_l === 'female') $row['PatientGender'] = 'انثى';
+    // تنظيف الهاتف لأغراض البحث
+    $row['_phone_digits'] = preg_replace('/\D+/', '', (string)($row['PatientContno'] ?? ''));
+    // خزن
+    $patients[] = $row;
+  }
   $st->close();
 }
 
 $total = count($patients);
 
 /* اقتراحات لـ datalist (أسماء/إيميلات فريدة) */
-$nameSet = [];
+$nameSet  = [];
 $emailSet = [];
 foreach ($patients as $r) {
   $n = trim($r['PatientName'] ?? '');
@@ -100,7 +104,6 @@ foreach ($patients as $r) {
     .pt-tools{display:flex;flex-wrap:wrap;gap:10px;margin-right:auto}
     .searchbox{position:relative}
     .searchbox i{position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#8aa2c0}
-    /* كبّرنا الحقل قليلاً + ارتفاع مريح */
     .searchbox input{
       padding-right:36px; border-radius:999px;
       min-width:360px; height:44px; font-size:.98rem;
@@ -159,17 +162,16 @@ foreach ($patients as $r) {
                     <button class="seg-btn" data-value="انثى">
                       أنثى <span class="seg-badge" id="gF">0</span>
                     </button>
-                   
                   </div>
 
-                  <!-- البحث: اسم / بريد / هاتف -->
+                  <!-- البحث: اسم / بريد / هاتف / رقم المريض -->
                   <div>
                     <div class="searchbox">
                       <i class="fa fa-search"></i>
                       <input id="q" class="form-control" list="patientsHints"
-                             placeholder="ابحث بالاسم / البريد / الهاتف (مثال: ali أو ali@example.com أو 771234567)">
+                             placeholder="ابحث بالاسم / البريد / الهاتف / رقم المريض (ID)">
                     </div>
-                    <div class="hint">إذا احتوى الاستعلام على <strong>@</strong> سيُعامل كبحث بريد. وإن كان أرقامًا فسوف يطابق أرقام الهاتف.</div>
+                    <div class="hint">إذا احتوى الاستعلام على <strong>@</strong> سيُعامل كبحث بريد. وإن كان أرقامًا فسوف يطابق رقم الهاتف أو رقم المريض.</div>
                     <datalist id="patientsHints">
                       <?php foreach(array_keys($nameSet) as $n): ?>
                         <option value="<?php echo htmlspecialchars($n); ?>"></option>
@@ -187,7 +189,7 @@ foreach ($patients as $r) {
                   <table class="table table-hover" id="patients-table">
                     <thead>
                       <tr>
-                        <!-- (أزلنا الأعمدة الثلاثة الأولى كما طلبت سابقًا) -->
+                        <th>رقم المريض</th>
                         <th>اسم المريض</th>
                         <th>رقم الاتصال</th>
                         <th>البريد الإلكتروني</th>
@@ -203,23 +205,21 @@ foreach ($patients as $r) {
                     <tbody>
                       <?php if ($patients): ?>
                         <?php foreach ($patients as $row):
-                          $has = !empty($row['pid']);
                           $gender = trim($row['PatientGender'] ?? '');
-                          $genderClass = $gender==='ذكر' ? 'gender-m' : ($gender==='انثى' ? 'gender-f':'gender-o');
+                          $genderClass = ($gender==='ذكر') ? 'gender-m' : (($gender==='انثى') ? 'gender-f' : 'gender-o');
                           $name   = trim($row['PatientName'] ?? '');
                           $email  = trim($row['PatientEmail'] ?? '');
-                          $phone  = preg_replace('/\D+/','', (string)($row['PatientContno'] ?? ''));
+                          $phone  = $row['_phone_digits'];
                         ?>
                         <tr
                           data-gender="<?php echo $gender ?: 'other'; ?>"
                           data-name="<?php echo htmlspecialchars(mb_strtolower($name, 'UTF-8')); ?>"
                           data-email="<?php echo htmlspecialchars(mb_strtolower($email, 'UTF-8')); ?>"
                           data-phone="<?php echo htmlspecialchars($phone); ?>"
+                          data-pno="<?php echo (int)$row['pid']; ?>"
                         >
-                          <td>
-                            <?php echo htmlspecialchars($name ?: '—'); ?>
-                            <?php if ($has): ?><span class="badge-soft" title="لديه ملف">سجل</span><?php endif; ?>
-                          </td>
+                          <td><?php echo (int)$row['pid']; ?></td>
+                          <td><?php echo htmlspecialchars($name ?: '—'); ?></td>
                           <td><?php echo htmlspecialchars($row['PatientContno'] ?: '—'); ?></td>
                           <td><?php echo htmlspecialchars($email ?: '—'); ?></td>
                           <td><span class="badge-soft <?php echo $genderClass; ?>"><?php echo $gender ?: '—'; ?></span></td>
@@ -229,18 +229,14 @@ foreach ($patients as $r) {
                           <td><?php echo htmlspecialchars($row['CreationDate'] ?: '—'); ?></td>
                           <td><?php echo htmlspecialchars($row['UpdationDate'] ?: '—'); ?></td>
                           <td>
-                            <?php if ($has): ?>
-                              <a href="view-patient.php?viewid=<?php echo (int)$row['pid']; ?>" class="btn btn-warning btn-sm btn-icon" title="عرض التفاصيل">
-                                <i class="fa fa-eye"></i> عرض
-                              </a>
-                            <?php else: ?>
-                              <span class="muted">—</span>
-                            <?php endif; ?>
+                            <a href="view-patient.php?viewid=<?php echo (int)$row['pid']; ?>" class="btn btn-warning btn-sm btn-icon" title="عرض التفاصيل">
+                              <i class="fa fa-eye"></i> عرض
+                            </a>
                           </td>
                         </tr>
                         <?php endforeach; ?>
                       <?php else: ?>
-                        <tr><td colspan="10" class="text-center">لا يوجد مرضى مسجلون لديك حالياً.</td></tr>
+                        <tr><td colspan="11" class="text-center">لا يوجد مرضى مسجلون لديك حالياً.</td></tr>
                       <?php endif; ?>
                     </tbody>
                   </table>
@@ -285,12 +281,12 @@ foreach ($patients as $r) {
       const gAll = document.getElementById('gAll');
       const gM   = document.getElementById('gM');
       const gF   = document.getElementById('gF');
-      const gO   = document.getElementById('gO');
+      const gO   = document.getElementById('gO'); // قد لا يوجد
 
       let genFilter = 'all';   // all | ذكر | انثى | other
 
       function normArabic(s){
-        return s
+        return (s||'')
           .replace(/[أإآٱ]/g,'ا')
           .replace(/ى/g,'ي')
           .replace(/ة/g,'ه')
@@ -313,6 +309,7 @@ foreach ($patients as $r) {
           const name   = tr.dataset.name  || '';
           const email  = tr.dataset.email || '';
           const phone  = tr.dataset.phone || '';
+          const pno    = tr.dataset.pno   || '';
 
           let match = true;
           if (raw){
@@ -320,7 +317,7 @@ foreach ($patients as $r) {
               match = email.indexOf(raw) !== -1;            // بريد
             } else {
               match = (normArabic(name).indexOf(norm) !== -1) || (email.indexOf(raw) !== -1); // اسم أو بريد
-              if (hasDigit) match = match || phone.indexOf(qDigits) !== -1;                    // هاتف
+              if (hasDigit) match = match || phone.indexOf(qDigits) !== -1 || pno.indexOf(qDigits) !== -1; // هاتف أو رقم مريض
             }
           }
 
@@ -337,7 +334,7 @@ foreach ($patients as $r) {
         });
 
         stTotal.textContent = total;
-        gAll.textContent = total; gM.textContent = m; gF.textContent = f; gO.textContent = o;
+        gAll.textContent = total; gM.textContent = m; gF.textContent = f; if (gO) gO.textContent = o;
       }
 
       q.addEventListener('input', applyFilters);

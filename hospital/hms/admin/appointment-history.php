@@ -12,6 +12,70 @@ if (!isset($_SESSION['id']) || strlen($_SESSION['id']) == 0) {
 
 $uid = (int) $_SESSION['id'];
 
+/* ---------------- Helpers: فحص أسماء الجداول/الأعمدة ---------------- */
+
+function current_db(mysqli $con): string {
+    $r = $con->query("SELECT DATABASE() db");
+    $row = $r ? $r->fetch_assoc() : null;
+    return $row['db'] ?? '';
+}
+function tableExists(mysqli $con, string $table): bool {
+    $db = current_db($con);
+    if ($db === '') return false;
+    $st = $con->prepare("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME=?");
+    $st->bind_param("ss", $db, $table);
+    $st->execute(); $st->store_result();
+    $ok = $st->num_rows > 0; $st->close();
+    return $ok;
+}
+function pickTable(mysqli $con, array $candidates, string $fallback=''): string {
+    foreach ($candidates as $t) if (tableExists($con, $t)) return $t;
+    return $fallback;
+}
+function columnExists(mysqli $con, string $table, string $col): bool {
+    $db = current_db($con);
+    if ($db === '') return false;
+    $st = $con->prepare("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?");
+    $st->bind_param("sss", $db, $table, $col);
+    $st->execute(); $st->store_result();
+    $ok = $st->num_rows > 0; $st->close();
+    return $ok;
+}
+function pickColumn(mysqli $con, string $table, array $candidates): string {
+    foreach ($candidates as $c) if (columnExists($con, $table, $c)) return $c;
+    return '';
+}
+
+/* ---------------- تحديد الجداول/الأعمدة الفعلية ---------------- */
+
+// جدول المواعيد (إذا اسمك مختلف جرّب candidates)
+$APPT_TBL = pickTable($con, ['appointment', 'appointments', 'tblappointment'], 'appointment');
+
+// جدول الأطباء
+$DOC_TBL  = pickTable($con, ['doctors', 'tbl_doctors', 'doctor'], 'doctors');
+
+// أعمدة الأطباء
+$docIdCol   = pickColumn($con, $DOC_TBL, ['id','doctorId','docId']);
+$docNameCol = pickColumn($con, $DOC_TBL, ['doctorName','name']);
+$docSpecCol = pickColumn($con, $DOC_TBL, ['specialization','specilization']); // نحل اختلاف a/i
+
+// أعمدة المواعيد
+$apptIdCol     = pickColumn($con, $APPT_TBL, ['id','apptId']);
+$apptUserIdCol = pickColumn($con, $APPT_TBL, ['userId','user_id','uid']);
+$apptDocIdCol  = pickColumn($con, $APPT_TBL, ['doctorId','doctor_id','docId']);
+$apptSpecCol   = pickColumn($con, $APPT_TBL, ['doctorSpecialization','doctor_specialization','specialization','specilization']);
+$feesCol       = pickColumn($con, $APPT_TBL, ['consultancyFees','fees','fee']);
+$dateCol       = pickColumn($con, $APPT_TBL, ['appointmentDate','date','apptDate']);
+$timeCol       = pickColumn($con, $APPT_TBL, ['appointmentTime','time','apptTime']);
+$postingCol    = pickColumn($con, $APPT_TBL, ['postingDate','created_at','createdAt','creationDate']);
+$userStatusCol = pickColumn($con, $APPT_TBL, ['userStatus','user_status']);
+$doctorStCol   = pickColumn($con, $APPT_TBL, ['doctorStatus','doctor_status']);
+
+// تأكيد الأعمدة الأساسية
+if ($APPT_TBL === '' || $DOC_TBL === '' || $apptIdCol === '' || $apptUserIdCol === '') {
+    die('تعذّر تحديد بنية الجداول. تأكد من أسماء الجداول/الأعمدة.');
+}
+
 /* CSRF token */
 if (empty($_SESSION['csrf'])) {
     $_SESSION['csrf'] = bin2hex(random_bytes(16));
@@ -20,28 +84,33 @@ if (empty($_SESSION['csrf'])) {
 /* ===== AJAX: تفاصيل موعد واحد ===== */
 if (isset($_GET['ajax']) && $_GET['ajax'] === 'appt' && isset($_GET['id'])) {
     header('Content-Type: application/json; charset=utf-8');
-
     $aid = (int)$_GET['id'];
-    if ($aid <= 0) {
-        http_response_code(400);
-        echo json_encode(['ok' => false, 'msg' => 'طلب غير صالح'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
+    if ($aid <= 0) { http_response_code(400); echo json_encode(['ok'=>false,'msg'=>'طلب غير صالح'], JSON_UNESCAPED_UNICODE); exit; }
+
+    // تعبيرات SELECT مرنة
+    $sel_docname = $docNameCol ? "d.`$docNameCol`" : "''";
+    $sel_spec    = $apptSpecCol ? "a.`$apptSpecCol`" : ($docSpecCol ? "d.`$docSpecCol`" : "''");
+    $sel_fees    = $feesCol ? "a.`$feesCol`" : "''";
+    $sel_date    = $dateCol ? "a.`$dateCol`" : "''";
+    $sel_time    = $timeCol ? "a.`$timeCol`" : "''";
+    $sel_post    = $postingCol ? "a.`$postingCol`" : "''";
+    $sel_uSt     = $userStatusCol ? "a.`$userStatusCol`" : "1";
+    $sel_dSt     = $doctorStCol ? "a.`$doctorStCol`" : "1";
 
     $sql = "
         SELECT 
-            a.id,
-            d.doctorName              AS docname,
-            a.doctorSpecialization,
-            a.consultancyFees,
-            a.appointmentDate,
-            a.appointmentTime,
-            a.postingDate,
-            a.userStatus,
-            a.doctorStatus
-        FROM appointment a
-        JOIN doctors d ON d.id = a.doctorId
-        WHERE a.userId = ? AND a.id = ?
+            a.`$apptIdCol`                                 AS id,
+            $sel_docname                                   AS docname,
+            $sel_spec                                      AS doctorSpecialization,
+            $sel_fees                                      AS consultancyFees,
+            $sel_date                                      AS appointmentDate,
+            $sel_time                                      AS appointmentTime,
+            $sel_post                                      AS postingDate,
+            $sel_uSt                                       AS userStatus,
+            $sel_dSt                                       AS doctorStatus
+        FROM `$APPT_TBL` a
+        LEFT JOIN `$DOC_TBL` d ON ".($docIdCol && $apptDocIdCol ? "d.`$docIdCol` = a.`$apptDocIdCol`" : "1=0")."
+        WHERE a.`$apptUserIdCol` = ? AND a.`$apptIdCol` = ?
         LIMIT 1
     ";
     if ($stmt = $con->prepare($sql)) {
@@ -64,8 +133,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'appt' && isset($_GET['id'])) {
     exit;
 }
 
-/* إلغاء الموعد عبر POST */
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_id'])) {
+/* إلغاء الموعد عبر POST (يعمل فقط إذا كان لدينا عمود userStatus) */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_id']) && $userStatusCol !== '') {
     $backPage = max(1, (int)($_POST['page'] ?? 1));
 
     $csrf_ok = hash_equals($_SESSION['csrf'], $_POST['csrf'] ?? '');
@@ -77,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_id'])) {
 
     $aid = (int) $_POST['cancel_id'];
     if ($aid > 0) {
-        $stmt = $con->prepare("UPDATE appointment SET userStatus = 0 WHERE id = ? AND userId = ? AND userStatus = 1");
+        $stmt = $con->prepare("UPDATE `$APPT_TBL` SET `$userStatusCol` = 0 WHERE `$apptIdCol` = ? AND `$apptUserIdCol` = ? AND `$userStatusCol` = 1");
         if ($stmt) {
             $stmt->bind_param("ii", $aid, $uid);
             $stmt->execute();
@@ -102,7 +171,7 @@ $offset  = ($page - 1) * $perPage;
 
 /* إجمالي السجلات */
 $totalRows = 0;
-if ($stmtCount = $con->prepare("SELECT COUNT(*) FROM appointment WHERE userId = ?")) {
+if ($stmtCount = $con->prepare("SELECT COUNT(*) FROM `$APPT_TBL` WHERE `$apptUserIdCol` = ?")) {
     $stmtCount->bind_param("i", $uid);
     $stmtCount->execute();
     $stmtCount->bind_result($totalRows);
@@ -113,49 +182,41 @@ $totalPages = max(1, (int)ceil($totalRows / $perPage));
 
 /* بيانات الصفحة الحالية */
 $rows = [];
-$stmt = $con->prepare("
+$sel_docname = $docNameCol ? "d.`$docNameCol`" : "''";
+$sel_spec    = $apptSpecCol ? "a.`$apptSpecCol`" : ($docSpecCol ? "d.`$docSpecCol`" : "''");
+$sel_fees    = $feesCol ? "a.`$feesCol`" : "''";
+$sel_date    = $dateCol ? "a.`$dateCol`" : "''";
+$sel_time    = $timeCol ? "a.`$timeCol`" : "''";
+$sel_post    = $postingCol ? "a.`$postingCol`" : "''";
+$sel_uSt     = $userStatusCol ? "a.`$userStatusCol`" : "1";
+$sel_dSt     = $doctorStCol ? "a.`$doctorStCol`" : "1";
+
+$sqlList = "
     SELECT 
-        a.id,
-        d.doctorName              AS docname,
-        a.doctorSpecialization,
-        a.consultancyFees,
-        a.appointmentDate,
-        a.appointmentTime,
-        a.postingDate,
-        a.userStatus,
-        a.doctorStatus
-    FROM appointment a
-    JOIN doctors d ON d.id = a.doctorId
-    WHERE a.userId = ?
-    ORDER BY a.id DESC
+        a.`$apptIdCol`                                 AS id,
+        $sel_docname                                   AS docname,
+        $sel_spec                                      AS doctorSpecialization,
+        $sel_fees                                      AS consultancyFees,
+        $sel_date                                      AS appointmentDate,
+        $sel_time                                      AS appointmentTime,
+        $sel_post                                      AS postingDate,
+        $sel_uSt                                       AS userStatus,
+        $sel_dSt                                       AS doctorStatus
+    FROM `$APPT_TBL` a
+    LEFT JOIN `$DOC_TBL` d ON ".($docIdCol && $apptDocIdCol ? "d.`$docIdCol` = a.`$apptDocIdCol`" : "1=0")."
+    WHERE a.`$apptUserIdCol` = ?
+    ORDER BY a.`$apptIdCol` DESC
     LIMIT ? OFFSET ?
-");
-if ($stmt) {
+";
+if ($stmt = $con->prepare($sqlList)) {
     $stmt->bind_param("iii", $uid, $perPage, $offset);
     $stmt->execute();
-    $stmt->bind_result(
-        $a_id,
-        $docname,
-        $doctorSpecialization,
-        $consultancyFees,
-        $appointmentDate,
-        $appointmentTime,
-        $postingDate,
-        $userStatus,
-        $doctorStatus
-    );
-    while ($stmt->fetch()) {
-        $rows[] = [
-            'id'                   => (int)$a_id,
-            'docname'              => $docname,
-            'doctorSpecialization' => $doctorSpecialization,
-            'consultancyFees'      => $consultancyFees,
-            'appointmentDate'      => $appointmentDate,
-            'appointmentTime'      => $appointmentTime,
-            'postingDate'          => $postingDate,
-            'userStatus'           => (int)$userStatus,
-            'doctorStatus'         => (int)$doctorStatus,
-        ];
+    $res = $stmt->get_result();
+    while ($res && ($row = $res->fetch_assoc())) {
+        $row['id'] = (int)$row['id'];
+        $row['userStatus']   = (int)$row['userStatus'];
+        $row['doctorStatus'] = (int)$row['doctorStatus'];
+        $rows[] = $row;
     }
     $stmt->close();
 }
@@ -178,102 +239,35 @@ if ($stmt) {
     <link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
 
     <style>
-        /* متغيرات عامة */
-        :root{
-          /* لو ارتفاع الهيدر عندك مختلف غيّر الرقم */
-          --header-h: 64px;
-          /* مقدار رفع السايدبار للأعلى */
-          --sidebar-lift: 10px;
-        }
-
-        /* --- تنسيق الصفحة --- */
-        body {
-            font-family: 'Tajawal', sans-serif;
-            background: #f0f5f9;
-            margin: 0; padding: 0;
-        }
-
-        .container-narrow {
-            max-width: 1000px;
-            margin: 0 auto 24px !important; /* بدون هامش علوي */
-        }
-
-        .page-head {
-            background: linear-gradient(90deg, #3498db, #4aa8e0);
-            color: #fff;
-            border-radius: 12px;
-            padding: 16px 18px;
-            margin: 0 0 16px;
-            text-align: center;
-            margin-top: 46px !important;   /* ارفع الشريط قليل */
-            margin-bottom: 21px !important;/* وانزل المحتوى قليل */
-        }
-
-        .card-clean {
-            background: #fff;
-            border-radius: 14px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, .06);
-            padding: 18px;
-            margin-top: 8px !important;
-        }
-
-        .table thead th { background: #f5f8fc }
-        .badge-soft { border-radius: 30px; padding: 6px 10px; font-weight: 600 }
-        .badge-active { background: #e6f7ef; color: #0f8f4e; border: 1px solid #bfe9d1 }
-        .badge-user-cancel { background: #fff3cd; color: #856404; border: 1px solid #ffeeba }
-        .badge-doc-cancel { background: #fde2e1; color: #b21f2d; border: 1px solid #f5c6cb }
-        .alert-compact { border-radius: 10px; padding: 10px 12px }
-        .pagination .page-link { border-radius: 8px; margin: 0 3px }
-        .btn-outline-danger { border: 1px solid #dc3545 }
-
-        /* نافذة منبثقة */
-        .rt-modal { position: fixed; inset: 0; z-index: 200000; display: none }
-        .rt-modal.open { display: block }
-        .rt-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.55) }
-        .rt-modal__dialog{
-            position: relative; margin: 8vh auto;
-            width: min(92vw, 680px); max-width: 680px;
-            background:#fff; border-radius:12px; box-shadow:0 12px 40px rgba(0,0,0,.25);
-            display:flex; flex-direction:column; overflow:hidden; direction:rtl; text-align:right;
-            height:auto; max-height:80vh
-        }
-        @media (max-width:576px){ .rt-modal__dialog{ margin:5vh auto; width:94vw; max-height:88vh } }
-        .rt-modal__header,.rt-modal__footer{ padding:12px 16px; border-bottom:1px solid #eee }
-        .rt-modal__footer{ border-bottom:0; border-top:1px solid #eee; display:flex; gap:8px; justify-content:flex-start }
-        .rt-modal__title{ margin:0; font-size:18px; font-weight:700 }
-        .rt-modal__close{ position:absolute; top:8px; left:10px; border:0; background:transparent; font-size:26px; line-height:1; cursor:pointer; color:#333 }
-        .rt-modal__body{ padding:14px 16px; overflow:auto; max-height:calc(80vh - 100px) }
-        .rt-modal-open{ overflow:hidden }
-        .info-label{ color:#555; font-weight:600; min-width:135px; display:inline-block; white-space:nowrap }
-
-        /* إزالة أي إزاحة علوية عامة من الحاويات القياسية */
-        .app-container, .main-content, .app-content, .content-wrapper, .wrap-content{
-          margin-top:0 !important; padding-top:0 !important;
-        }
-
-        /* ===== رفع السايدبار قليلاً مع تعويض الارتفاع ===== */
-        /* تنفع مع معظم قوالب HMS (id=sidebar أو .app-sidebar) */
-        aside#sidebar.app-sidebar,
-        #sidebar.app-sidebar,
-        #sidebar{
-          position: fixed !important;
-          right: 0;
-          top: calc(var(--header-h) - var(--sidebar-lift)) !important;
-          height: calc(100vh - (var(--header-h) - var(--sidebar-lift))) !important;
-          overflow-y: auto;
-        }
-        /* لو داخل السايدبار قسم بروفايل كان يتحرك، صفّره */
-        #sidebar .user-profile{ margin-top: 0 !important; }
-
-        /* على الشاشات الصغيرة عادة السايدبار يصير أوف-كانفاس، ما نرفع */
-        @media (max-width: 991.98px){
-          aside#sidebar.app-sidebar,
-          #sidebar.app-sidebar,
-          #sidebar{
-            top: var(--header-h) !important;
-            height: calc(100vh - var(--header-h)) !important;
-          }
-        }
+        :root{ --header-h:64px; --sidebar-lift:10px; }
+        body{font-family:'Tajawal',sans-serif;background:#f0f5f9;margin:0;padding:0}
+        .container-narrow{max-width:1000px;margin:0 auto 24px!important}
+        .page-head{background:linear-gradient(90deg,#3498db,#4aa8e0);color:#fff;border-radius:12px;padding:16px 18px;margin:46px 0 21px!important;text-align:center}
+        .card-clean{background:#fff;border-radius:14px;box-shadow:0 8px 20px rgba(0,0,0,.06);padding:18px;margin-top:8px!important}
+        .table thead th{background:#f5f8fc}
+        .badge-soft{border-radius:30px;padding:6px 10px;font-weight:600}
+        .badge-active{background:#e6f7ef;color:#0f8f4e;border:1px solid #bfe9d1}
+        .badge-user-cancel{background:#fff3cd;color:#856404;border:1px solid #ffeeba}
+        .badge-doc-cancel{background:#fde2e1;color:#b21f2d;border:1px solid #f5c6cb}
+        .alert-compact{border-radius:10px;padding:10px 12px}
+        .pagination .page-link{border-radius:8px;margin:0 3px}
+        .btn-outline-danger{border:1px solid #dc3545}
+        .rt-modal{position:fixed;inset:0;z-index:200000;display:none}
+        .rt-modal.open{display:block}
+        .rt-modal__backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+        .rt-modal__dialog{position:relative;margin:8vh auto;width:min(92vw,680px);max-width:680px;background:#fff;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.25);display:flex;flex-direction:column;overflow:hidden;direction:rtl;text-align:right;height:auto;max-height:80vh}
+        @media (max-width:576px){.rt-modal__dialog{margin:5vh auto;width:94vw;max-height:88vh}}
+        .rt-modal__header,.rt-modal__footer{padding:12px 16px;border-bottom:1px solid #eee}
+        .rt-modal__footer{border-bottom:0;border-top:1px solid #eee;display:flex;gap:8px;justify-content:flex-start}
+        .rt-modal__title{margin:0;font-size:18px;font-weight:700}
+        .rt-modal__close{position:absolute;top:8px;left:10px;border:0;background:transparent;font-size:26px;line-height:1;cursor:pointer;color:#333}
+        .rt-modal__body{padding:14px 16px;overflow:auto;max-height:calc(80vh - 100px)}
+        .rt-modal-open{overflow:hidden}
+        .info-label{color:#555;font-weight:600;min-width:135px;display:inline-block;white-space:nowrap}
+        .app-container,.main-content,.app-content,.content-wrapper,.wrap-content{margin-top:0!important;padding-top:0!important}
+        aside#sidebar.app-sidebar,#sidebar.app-sidebar,#sidebar{position:fixed!important;right:0;top:calc(var(--header-h) - var(--sidebar-lift))!important;height:calc(100vh - (var(--header-h) - var(--sidebar-lift)))!important;overflow-y:auto}
+        #sidebar .user-profile{margin-top:0!important}
+        @media (max-width:991.98px){aside#sidebar.app-sidebar,#sidebar.app-sidebar,#sidebar{top:var(--header-h)!important;height:calc(100vh - var(--header-h))!important}}
     </style>
 </head>
 
@@ -316,9 +310,11 @@ if ($stmt) {
                             $rowNum = $offset + 1;
                             if (count($rows) > 0):
                                 foreach ($rows as $row):
-                                    if ($row['userStatus'] === 1 && $row['doctorStatus'] === 1) {
+                                    $u = (int)$row['userStatus'];
+                                    $d = (int)$row['doctorStatus'];
+                                    if ($u === 1 && $d === 1) {
                                         $statusHtml = '<span class="badge-soft badge-active">نشط</span>';
-                                    } elseif ($row['userStatus'] === 0 && $row['doctorStatus'] === 1) {
+                                    } elseif ($u === 0 && $d === 1) {
                                         $statusHtml = '<span class="badge-soft badge-user-cancel">أُلغي بواسطتك</span>';
                                     } else {
                                         $statusHtml = '<span class="badge-soft badge-doc-cancel">أُلغي من الطبيب</span>';
@@ -336,7 +332,7 @@ if ($stmt) {
                                             <button type="button" class="btn btn-info btn-sm btn-view" data-id="<?php echo (int)$row['id']; ?>">
                                                 <i class="fa fa-eye"></i> عرض
                                             </button>
-                                            <?php if ($row['userStatus'] === 1 && $row['doctorStatus'] === 1): ?>
+                                            <?php if ($userStatusCol !== '' && $u === 1 && $d === 1): ?>
                                                 <form method="post" action="appointment-history.php" onsubmit="return confirm('هل تريد إلغاء هذا الموعد؟');" style="display:inline-block">
                                                     <input type="hidden" name="csrf" value="<?php echo $_SESSION['csrf']; ?>">
                                                     <input type="hidden" name="cancel_id" value="<?php echo (int)$row['id']; ?>">
@@ -401,27 +397,13 @@ if ($stmt) {
 
                 <div id="ap-content" style="display:none;">
                     <div class="row g-2">
-                        <div class="col-sm-6">
-                            <div><span class="info-label">اسم الطبيب:</span> <span id="apDoc"></span></div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div><span class="info-label">التخصص:</span> <span id="apSpec"></span></div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div><span class="info-label">الرسوم:</span> <span id="apFees"></span></div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div><span class="info-label">التاريخ:</span> <span id="apDate"></span></div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div><span class="info-label">الوقت:</span> <span id="apTime"></span></div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div><span class="info-label">تاريخ الإنشاء:</span> <span id="apPost"></span></div>
-                        </div>
-                        <div class="col-sm-12">
-                            <div><span class="info-label">الحالة:</span> <span id="apStatus" class="badge-soft"></span></div>
-                        </div>
+                        <div class="col-sm-6"><div><span class="info-label">اسم الطبيب:</span> <span id="apDoc"></span></div></div>
+                        <div class="col-sm-6"><div><span class="info-label">التخصص:</span> <span id="apSpec"></span></div></div>
+                        <div class="col-sm-6"><div><span class="info-label">الرسوم:</span> <span id="apFees"></span></div></div>
+                        <div class="col-sm-6"><div><span class="info-label">التاريخ:</span> <span id="apDate"></span></div></div>
+                        <div class="col-sm-6"><div><span class="info-label">الوقت:</span> <span id="apTime"></span></div></div>
+                        <div class="col-sm-6"><div><span class="info-label">تاريخ الإنشاء:</span> <span id="apPost"></span></div></div>
+                        <div class="col-sm-12"><div><span class="info-label">الحالة:</span> <span id="apStatus" class="badge-soft"></span></div></div>
                     </div>
                 </div>
             </div>
